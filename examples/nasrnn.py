@@ -1,7 +1,7 @@
 import xflow as xf
 
 hidden_size = 512
-length = 1
+length = 5
 
 def combine(graph, x, h):
     w1 = graph.new_weight(dims=(hidden_size, x.dim(1)))

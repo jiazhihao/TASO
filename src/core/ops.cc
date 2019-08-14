@@ -266,8 +266,9 @@ Graph* Graph::optimize(float alpha, int budget)
   hashmap.insert(hash());
   Graph *bestGraph = this;
   float bestCost = total_cost();
-  printf("baselineCost = %.4lfms\n", bestCost);
-  printf("baselineGraph: end-to-end runtime = %.4lfms\n", run());
+  //printf("MetaFlow Cost = %.4lfms\n", bestCost);
+  printf("MetaFlow w/ cuDNN: end-to-end inference time =\n"
+         "%.8lf ms (average of 100 runs)\n", run());
   print_costs();
 
   int counter = 0;
@@ -275,6 +276,7 @@ Graph* Graph::optimize(float alpha, int budget)
   //long long start_time = microsecond_timer();
   ofstream timer_fs;
   timer_fs.open("timer.txt");
+  printf("\n        ===== Start Cost-Based Backtracking Search =====\n");
   while (!candidates.empty()) {
     Graph *subGraph = candidates.top();
     candidates.pop();
@@ -306,8 +308,10 @@ Graph* Graph::optimize(float alpha, int budget)
     }
   }
   bestGraph = bestGraph->preprocess_weights();
-  printf("bestCost = %.4lf\n", bestGraph->total_cost());
-  printf("bestGraph: end-to-end runtime = %.2lf\n", bestGraph->run());
+  printf("        ===== Finish Cost-Based Backtracking Search =====\n\n");
+  //printf("bestCost = %.4lf\n", bestGraph->total_cost());
+  printf("XFlow w/ cuDNN: end-to-end inference time =\n");
+  printf("%.8lf ms (average of 100 runs)\n", bestGraph->run());
   bestGraph->print_costs();
 
   return bestGraph;

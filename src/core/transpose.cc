@@ -30,14 +30,15 @@ int permutation_to_index(const std::vector<int>& perm)
   return idx;
 }
 
-Tensor Graph::transpose(Tensor _input,
-                        const std::vector<int>& perm,
-                        bool _shuffle)
+TensorHandle Graph::transpose(const TensorHandle _input,
+                              const std::vector<int>& perm,
+                              bool _shuffle)
 {
-  Op op = model->get_or_create_transpose(_input, perm, _shuffle);
-  add_edge(_input.op, op, _input.idx, 0);
-  Tensor t = op.ptr->outputs[0];
-  t.op = op;
+  Op op = model->get_or_create_transpose(*_input, perm, _shuffle);
+  assert(op != Op::INVALID_OP);
+  add_edge(_input->op, op, _input->idx, 0);
+  TensorHandle t = new Tensor(op.ptr->outputs[0]);
+  t->op = op;
   return t;
 }
 

@@ -452,8 +452,9 @@ public:
                           ActiMode _activation = AC_MODE_NONE);
   TensorHandle reshape(const TensorHandle _input,
                        const std::vector<int>& shape);
-  Tensor transpose(Tensor _input, const std::vector<int>& _perm,
-                   bool _shuffle = false);
+  TensorHandle transpose(const TensorHandle _input,
+                         const std::vector<int>& _perm,
+                         bool _shuffle = false);
   TensorHandle relu(const TensorHandle _input,
                     bool _inPlace = true);
   TensorHandle sigmoid(const TensorHandle _input,

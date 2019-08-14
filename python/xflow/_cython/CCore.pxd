@@ -160,6 +160,9 @@ cdef extern from "xflow/ops.h" namespace "XFlow":
                             bool _inplace)
         TensorHandle tanh(const TensorHandle input,
                           bool _inplace)
+        TensorHandle transpose(const TensorHandle input,
+                               const vector[int] perm,
+                               bool shuffle)
         TensorHandle new_input(int ndim, const int* dims)
         TensorHandle new_weight(int ndim, const int* dims, const float* data)
         Graph* optimize(float alpha, int budget)

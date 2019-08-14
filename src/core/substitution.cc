@@ -310,7 +310,7 @@ void GraphXfer::load_graph_xfer_from_pb_file(Model* model,
   GraphSubst::RuleCollection collection;
   std::fstream input(filename, ios::in);
   assert(collection.ParseFromIstream(&input));
-  printf("Number of generated substitutions = %d\n", collection.rule_size());
+  //printf("Number of generated substitutions = %d\n", collection.rule_size());
   for (int i = 0; i < collection.rule_size(); i++) {
     const GraphSubst::Rule& rule = collection.rule(i);
     std::map<int, TensorX> mappedInputs;

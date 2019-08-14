@@ -188,9 +188,10 @@ void Model::measure_matmul_cost(Matmul* mm)
   float milliseconds;
   cudaEventElapsedTime(&milliseconds, startEvent, endEvent);
   mm->runtime = milliseconds / REPEAT_TIMES;
-  printf("measure[Matmul]: %s %s acti(%d) cost(%.4lf)\n",
-         mm->inputs[0].to_string("input").c_str(),
-         mm->inputs[1].to_string("weight").c_str(),
-         mm->activation, mm->runtime);
+  if (print_cost)
+    printf("  measure[Matmul]: %s %s acti(%d) cost(%.4lf)\n",
+           mm->inputs[0].to_string("input").c_str(),
+           mm->inputs[1].to_string("weight").c_str(),
+           mm->activation, mm->runtime);
 }
 

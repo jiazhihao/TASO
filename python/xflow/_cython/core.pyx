@@ -163,7 +163,7 @@ cdef class PyGraph:
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
-    def reshape(self, PyTensor input, list shape):
+    def reshape(self, PyTensor input, tuple shape):
         cdef vector[int] cshape
         cshape.resize(len(shape))
         for i in range(len(shape)):
@@ -184,6 +184,15 @@ cdef class PyGraph:
 
     def tanh(self, PyTensor input, bool inplace = False):
         cdef TensorHandle handle = self.p_graph.tanh(input.ctensor, inplace)
+        t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
+        return PyTensor(t)
+
+    def transpose(self, PyTensor input, tuple perm, bool shuffle = False):
+        cdef vector[int] cperm
+        cperm.resize(len(perm))
+        for i in range(len(perm)):
+            cperm[i] = perm[i]
+        cdef TensorHandle handle = self.p_graph.transpose(input.ctensor, cperm, shuffle)
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
