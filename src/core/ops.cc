@@ -197,9 +197,15 @@ Graph::Graph()
     model_singleton = new Model();
   }
   model = model_singleton;
+  model->print_cost = false;
   //size_t inputSize = sizeof(DATATYPE) * n * c * h * w;
   //checkCUDA(cudaMalloc(&input.ptr, inputSize));
   //printf("Initialize a graph\n");
+}
+
+void Graph::print_measurements(void)
+{
+  model->print_cost = true;
 }
 
 TensorHandle Graph::new_input(int ndim, const int* dims)

@@ -94,6 +94,12 @@ cdef class PyGraph:
             ptr = ctypes.cast(graph, ctypes.c_void_p).value
             self.p_graph = <Graph*>(ptr)
 
+    def print_measurements(self):
+        self.p_graph.print_measurements()
+
+    def run_time(self):
+        return self.p_graph.run()
+
     #def __dealloc__(self):
         #t = ctypes.cast(<unsigned long long>self.p_graph, ctypes.c_void_p)
         #print(t)
@@ -297,12 +303,16 @@ cdef class PyGraph:
             return "Conv"
         elif type == OP_DROPOUT:
             return "Dropout"
-        elif type == OP_SPLIT:
-            return "Split"
+        elif type == OP_MATMUL:
+            return "Matmul"
         elif type == OP_RESHAPE:
             return "Reshape"
         elif type == OP_RELU:
             return "Relu"
+        elif type == OP_SPLIT:
+            return "Split"
+        elif type == OP_TRANSPOSE:
+            return "Transpose"
         elif type == OP_POOL2D_MAX:
             return "MaxPool"
         elif type == OP_POOL2D_AVG:
@@ -350,5 +360,13 @@ cdef class PyGraph:
             return self.p_graph.get_operator_int_attr(op.guid, PM_AXIS)
         elif attrname == 'split':
             return self.get_split_lens(op)
+        elif attrname == 'perm':
+            perIdx = self.p_graph.get_operator_int_attr(op.guid, PM_PERM)
+            dims = self.get_output_dims(op, 0)
+            for i in range(len(dims)-1,-1,-1):
+                dims[i] = perIdx % len(dims)
+                perIdx = perIdx // len(dims)
+            perm = tuple(dims)
+            return perm
         else:
            assert False, 'Internal error: unknow attribute {}'.format(attrname)

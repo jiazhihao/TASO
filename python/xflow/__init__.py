@@ -71,6 +71,12 @@ def _dropout(op, graph, tensors, initializer):
     outputs = graph.dropout(inputs[0], rate)
     return outputs
 
+def _matmul(op, graph, tensors, initializer):
+    inputs = _get_inputs(op, tensors)
+    assert len(inputs) == 2, "Matmul requires exactly two inputs"
+    outputs = graph.matmul(inputs[0], inputs[1])
+    return outputs
+
 def _pad(op, graph, tensors, initializer):
     inputs = _get_inputs(op, tensors)
     attrs = _parse_attribute(op.attribute)
@@ -112,7 +118,7 @@ def _reshape(op, graph, tensors, initializer):
             shape = list()
             for dim in data.int64_data:
                 shape.append(dim)
-    outputs = graph.reshape(inputs[0], shape)
+    outputs = graph.reshape(inputs[0], tuple(shape))
     return outputs
 
 def _relu(op, graph, tensors, initializer):
@@ -120,6 +126,29 @@ def _relu(op, graph, tensors, initializer):
     assert op.input[0] in tensors
     attrs = _parse_attribute(op.attribute)
     outputs = graph.relu(tensors[op.input[0]])
+    return outputs
+
+def _split(op, graph, tensors, initializer):
+    assert len(op.input) == 1, "Split requires exactly one input"
+    assert op.input[0] in tensors
+    attrs = _parse_attribute(op.attribute)
+    axis = attrs["axis"]
+    split_ints = attrs["split"]
+    split_list = list()
+    for i in split_ints:
+        split_list.append(i)
+    outputs = graph.split(tensors[op.input[0]], axis, split_list)
+    return outputs
+
+def _transpose(op, graph, tensors, initializer):
+    assert len(op.input) == 1, "Transpose requires exactly one input"
+    assert op.input[0] in tensors
+    attrs = _parse_attribute(op.attribute)
+    perm_ints = attrs["perm"]
+    perm = list()
+    for i in perm_ints:
+        perm.append(i)
+    outputs = graph.transpose(tensors[op.input[0]], tuple(perm), shuffle=True)
     return outputs
 
 # Add all supported operators
@@ -132,11 +161,17 @@ xf_operators['Dropout'] = _dropout
 xf_operators['Pad'] = _pad
 xf_operators['Reshape'] = _reshape
 xf_operators['Relu'] = _relu
+xf_operators['Matmul'] = _matmul
 xf_operators['MaxPool'] = _maxpool2d
 xf_operators['AveragePool'] = _avgpool2d
+xf_operators['Split'] = _split
+xf_operators['Transpose'] = _transpose
 
-def new_graph():
-    return core.PyGraph()
+def new_graph(print_measurements = False):
+    graph = core.PyGraph()
+    if print_measurements:
+        graph.print_measurements()
+    return graph
 
 def load(filename):
     '''
@@ -180,6 +215,8 @@ def load(filename):
 
 input_weight_names = dict()
 input_weight_names['Conv'] = ['input', 'weight', 'bias']
+input_weight_names['Matmul'] = ['input', 'weight']
+input_weight_names['Reshpe'] = ['input', 'shape']
 
 operator_attrs = dict()
 operator_attrs['Add'] = []
@@ -187,10 +224,12 @@ operator_attrs['AveragePool'] = ['kernel_shape', 'pads', 'strides']
 operator_attrs['Concat'] = ['axis']
 operator_attrs['Conv'] = ['group', 'kernel_shape', 'pads', 'strides']
 operator_attrs['Dropout'] = []
+operator_attrs['Matmul'] = []
 operator_attrs['MaxPool'] = ['kernel_shape', 'pads', 'strides']
 operator_attrs['Split'] = ['axis', 'split']
 operator_attrs['Relu'] = []
 operator_attrs['Reshape'] = []
+operator_attrs['Transpose'] = ['perm']
 
 def _input_tensor_name(graph, inedge, op):
     intype = graph.get_operator_type(inedge['srcOp'])
@@ -247,8 +286,10 @@ def export_onnx(graph):
 
         # add a second input for Reshape
         if mytype == 'Reshape':
-            inputs.append('Reshape_attr')
-            graph_inputs.append(helper.make_tensor_value_info('Reshape_attr', TensorProto.INT64, [1]))
+            inputs.append('Reshape_attr{}'.format(op['guid']))
+            shape = graph.get_output_dims(op, 0)
+            graph_inputs.append(helper.make_tensor_value_info('Reshape_attr{}'.format(op['guid']), TensorProto.INT64, [len(shape)]))
+            graph_initializers.append(helper.make_tensor('Reshape_attr{}'.format(op['guid']), TensorProto.INT64, [len(shape)], shape))
         outputs = list()
         for i in range(graph.get_num_outputs(op)):
             outputs.append(_output_tensor_name(graph, op, i))

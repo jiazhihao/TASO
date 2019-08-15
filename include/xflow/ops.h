@@ -499,6 +499,7 @@ public:
   float total_cost(void);
   float run();
   void print_costs(void);
+  void print_measurements(void);
 #ifdef TRT
   void buildTRTNetwork(INetworkDefinition *network);
 private:

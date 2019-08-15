@@ -92,6 +92,7 @@ Transpose::Transpose(Model* _model, Tensor _input,
   assert(shuffle);
   permIdx = permutation_to_index(_perm);
   assert(_input.numDim == _perm.size());
+  numOutputs = 1;
   // set dims and strides
   outputs[0].numDim = _input.numDim;
   for (int i = 0; i < _perm.size(); i++) {

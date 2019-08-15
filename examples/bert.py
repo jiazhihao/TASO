@@ -36,7 +36,9 @@ def attention(graph, input, heads):
 
 graph = xf.new_graph()
 input = graph.new_input(dims=(seq_length, hidden_dims))
+input = graph.relu(input)
 t = input
 for i in range(8):
     t = attention(graph, t, 16)
+
 new_graph = xf.optimize(graph, alpha=1.0, budget=100)
