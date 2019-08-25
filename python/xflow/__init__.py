@@ -197,7 +197,7 @@ def load(filename):
             for weight in model.graph.initializer:
                 if (weight.name == t.name):
                     weight_data = numpy_helper.to_array(weight)
-            assert(weight_data is not None)
+            #assert(weight_data is not None)
             tensors[t.name] = graph.new_weight(dims=tuple(dims), data = weight_data)
 
     for op in model.graph.node:
