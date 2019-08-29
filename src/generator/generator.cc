@@ -319,6 +319,7 @@ public:
   }
   bool compute(const TensorTemp& input, int opIdx)
   {
+    //if (input.opIdx >= 0) return false;
     if (input.numDim != 4) return false;
     if ((input.dim[2] > kernelH) || (input.dim[3] > kernelW)) return false;
     if ((input.dim[2] == kernelH) && (input.dim[3] == kernelW)) return false;
@@ -1518,7 +1519,7 @@ void init_tensor_temp(TensorTemp& tt, std::string name, int opIdx, int tsIdx, in
   int total = tt.size();
   assert(total <= MAX_SIZE);
   for (int i = 0; i < total; i++)
-    //tt.data[i] = std::rand() % 10;
+    //tt.data[i] = (std::rand() % 2000 - 1000);
     tt.data[i] = std::rand() - RAND_MAX / 2;
 }
 
@@ -1761,8 +1762,8 @@ int main(int argc, char **argv)
   operator_names[ops.back()] = "Constant_IMM";
   ops.push_back(new ConstantOneTemp(i1.numDim, i1.dim));
   operator_names[ops.back()] = "Constant_One";
-  //ops.push_back(new EnlargeConvTemp(3, 3));
-  //operator_names[ops.back()] = "Enlarge3x3";
+  ops.push_back(new EnlargeConvTemp(3, 3));
+  operator_names[ops.back()] = "Enlarge3x3";
   ops.push_back(new ScalarMulTemp());
   operator_names[ops.back()] = "ScalarMul";
   ops.push_back(new ActivationTemp(OP_RELU));

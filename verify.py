@@ -74,6 +74,7 @@ operator_data = {
     OP_CONCAT: ('concat', ((PM_AXIS, {0, 1, 2, 3}),), 2, 1, {2,3,4}),
     OP_SPLIT: ('split', ((PM_AXIS, {0, 1, 2, 3}),), 1, 2, {2,3,4}),
     OP_TRANSPOSE: ('transpose', (), 1, 1, {2}),
+    OP_ENLARGE: ('enlarge', ((PM_KERNEL_H, {3}), (PM_KERNEL_W, {3})), 1, 1, {4}),
     OP_EW_ADD: ('ewadd', (), 2, 1, {2,3,4}),
     OP_EW_MUL: ('ewmul', (), 2, 1, {2,3,4}),
     OP_MATMUL: ('matmul', (), 2, 1, {2}),
@@ -440,6 +441,34 @@ axioms = [
     (ForAll([x], ewmul_0(x, const_one_0()) == x),
      lambda :[(s,) for dim in [2,3,4] for s in product(N, repeat=dim)] ),
 
+    # enlarge axioms
+    (ForAll([sx, sy, acti, kx, ky, x, y], conv2d_0(sx, sy, PD_MODE_SAME, acti, x, y) == conv2d_0(sx, sy, PD_MODE_SAME, acti, x, enlarge_0(kx, ky, y))),
+     None),
+
+    #(ForAll([kx, ky, x], conv2d_0(1, 1, PD_MODE_SAME, AC_MODE_NONE, const_iconv_0(kx, ky), conv2d_0(1, 1, PD_MODE_SAME, AC_MODE_NONE, const_iconv_0(kx, ky), x)) == enlarge_0(kx, ky, x)),
+    # None),
+
+    #(ForAll([kx, ky, x], enlarge_0(kx, ky, ewmul_0(x, pool2d_max_0(kx, ky, 1, 1, PD_MODE_SAME, x))) == ewmul_0(enlarge_0(kx, ky, x), pool2d_max_0(kx, ky, 1, 1, PD_MODE_SAME, enlarge_0(kx, ky, x)))),
+    # None),
+
+    (ForAll([kx, ky, x, y], enlarge_0(kx, ky, ewmul_0(x, y)) == ewmul_0(enlarge_0(kx, ky, x), enlarge_0(kx, ky, y))),
+     None),
+
+    (ForAll([kx, ky, x, y], enlarge_0(kx, ky, ewadd_0(x, y)) == ewadd_0(enlarge_0(kx, ky, x), enlarge_0(kx, ky, y))),
+     None),
+
+    (ForAll([kx, ky, x, w], enlarge_0(kx, ky, scalar_mul_0(x, w)) == scalar_mul_0(enlarge_0(kx, ky, x), w)),
+     None),
+
+    (ForAll([kx, ky, x, y], enlarge_0(kx, ky, concat_0(0, x, y)) == concat_0(0, enlarge_0(kx, ky, x), enlarge_0(kx, ky, y))),
+     None),
+
+    (ForAll([kx, ky, x, y], enlarge_0(kx, ky, concat_0(1, x, y)) == concat_0(1, enlarge_0(kx, ky, x), enlarge_0(kx, ky, y))),
+     None),
+
+    (ForAll([kx, ky, x], enlarge_0(kx, ky, relu_0(x)) == relu_0(enlarge_0(kx, ky, x))),
+     None),
+
     # concat is associative (wrong axiom - makes many others redundant)
     # (ForAll([ax, x, y, z], concat_0(ax, x, concat_0(ax, y,z)) == concat_0(ax, concat_0(ax, x, y), z)),
     #  lambda : [(ax, s1, s2, s3)
@@ -529,11 +558,15 @@ if __name__ == '__main__':
 
     blacklist = {
         # some substitutions that are known to be incorrect and should be skipped
-        'nasnet_subst.pb': [166, 167, 186, 187, 222, 223, 224, 225, 226, 227, 283, 284, 290, 291, 298, 299],
-        'graph_subst.pb': [178, 179, 387, 405, 429, 443, 444, 485, 486, 487, 488, 489, 490, 548, 549, 555, 556, 563, 564],
+        #'nasnet_subst.pb': [166, 167, 186, 187, 222, 223, 224, 225, 226, 227, 283, 284, 290, 291, 298, 299],
+        #'graph_subst.pb': [178, 179, 387, 405, 429, 443, 444, 485, 486, 487, 488, 489, 490, 548, 549, 555, 556, 563, 564],
+        #'graph_subst.pb': [201, 202, 247, 259, 264, 265, 316, 527, 528, 529, 532, 573, 584, 585, 586, 607, 627, 628, 670, 671, 672, 673, 674, 675, 740, 741, 751, 752, 761, 762],
+        'graph_subst.pb': [201, 202, 209, 254, 255],
     }[os.path.basename(sys.argv[1])]
 
     for i, rule in enumerate(rules.rule):
+        if i < 200:
+            continue
         if i in blacklist:
             continue
         # print("Verifying rule: {} with {} outputs\n".format(rule, len(rule.mappedOutput)))
