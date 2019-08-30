@@ -114,7 +114,7 @@ def require(b):
         raise BadShapeError()
 
 
-F = z3.Function("F", z3.RealSort(), z3.RealSort())
+_relu = z3.Function("relu", z3.RealSort(), z3.RealSort())
 
 
 def matmul_0(A,B):
@@ -201,7 +201,7 @@ def conv2d_0(sx, sy, pad, acti, A, B):
                                 assert -py <= posW <= sa[3] + py, (posW, h, w, sx, sy, kh, kw, py, so)
                                 if posH >= 0 and posH < sa[2] and posW >= 0 and posW < sa[3]:
                                     value += A[n,cin+group_idx*sb[1],posH,posW] * B[c,cin,kh,kw]
-                    C[n,c,h,w] = value if acti == AC_MODE_NONE else F(value)
+                    C[n,c,h,w] = value if acti == AC_MODE_NONE else _relu(value)
     C.splits = (A.splits[0], B.splits[0], (), ())
     return C
 
@@ -413,7 +413,7 @@ def relu_0(A):
     sa = A.shape
     C = Tensor.zeros(sa)
     for ii in product(*[range(n) for n in sa]):
-        C[ii] = F(A[ii])
+        C[ii] = _relu(A[ii])
     C.splits = A.splits
     return C
 
@@ -459,6 +459,22 @@ def split_1(d, A):
         jj[d] += s
         C[ii] = A[tuple(jj)]
     C.splits = tuple(A.splits[i] if i != d else r for  i in range(A.dim))
+    return C
+
+
+def enlarge_0(kx, ky, A):
+    sa = A.shape
+    require(len(sa) == 4)
+    sc = (sa[0], sa[1], max(sa[2], kx), max(sa[3], ky))
+    C = Tensor.zeros(sc)
+    dx = (sc[2] - sa[2]) // 2
+    dy = (sc[3] - sa[3]) // 2
+    for n in range(sa[0]):
+        for c in range(sa[1]):
+            for h in range(sa[2]):
+                for w in range(sa[3]):
+                    C[n, c, h + dx, w + dy] = A[n, c, h, w]
+    C.splits = (A.splits[0], A.splits[1], (), ()) # TODO: compute split tree for other dimensions?
     return C
 
 
@@ -513,6 +529,7 @@ def check_axiom(s):
         assert tuple(x if type(x) is int else x.shape for x in vs) == s
         claim = func(*vs)
         s = z3.Solver()
+        s.add(_relu(0) == 0) # assume relu(0) = 0
         s.add(z3.Not(claim))
         r = s.check()
         if r == z3.unsat:
@@ -533,7 +550,7 @@ def print_function(x):
 
 if __name__ == '__main__':
 
-    if True:
+    if False:
         print "Checking that axioms imply lemmas"
         axioms = verify.axioms
         lemmas = verify.lemmas
@@ -553,7 +570,7 @@ if __name__ == '__main__':
         print 'Done' + '\n'*2
 
 
-    if True:
+    if False:
         print "Checking axiom redundancies"
         axioms = verify.axioms
         flags = [z3.Bool('f{}'.format(i)) for i in range(len(axioms))]
@@ -583,7 +600,7 @@ if __name__ == '__main__':
 
     if True:
         print "Symbolically checking axioms for small tensors"
-        axioms = verify.axioms #[35:]
+        axioms = verify.axioms[-7:] #[35:]
         total_combinations = 0
         print now(), "Checking {} axioms...".format(len(axioms))
         spaces = [b() if b is not None else None for a,b in axioms]
