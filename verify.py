@@ -441,9 +441,19 @@ axioms = [
     (ForAll([x], ewmul_0(x, const_one_0()) == x),
      lambda :[(s,) for dim in [2,3,4] for s in product(N, repeat=dim)] ),
 
+    # const_iconv and const_pool
+    (ForAll([kx, ky], pool2d_avg_0(kx, ky, 1, 1, PD_MODE_SAME, const_iconv(kx, ky)) == const_pool(kx, ky)),
+     None),
+
     # enlarge axioms
     (ForAll([sx, sy, acti, kx, ky, x, y], conv2d_0(sx, sy, PD_MODE_SAME, acti, x, y) == conv2d_0(sx, sy, PD_MODE_SAME, acti, x, enlarge_0(kx, ky, y))),
-     None),
+     lambda : [(sx, sy, acti, kx, ky, (n,c,h,w), (c1,c,d1,d2))
+               for sx in [1,2]
+               for sy in [1,2]
+               for acti in [AC_MODE_NONE, AC_MODE_RELU]
+               for kx, ky, d1, d2 in product(D, repeat=4)
+               for n,c,h,w,c1 in product(N,repeat=5)
+     ]),
 
     #(ForAll([kx, ky, x], conv2d_0(1, 1, PD_MODE_SAME, AC_MODE_NONE, const_iconv_0(kx, ky), conv2d_0(1, 1, PD_MODE_SAME, AC_MODE_NONE, const_iconv_0(kx, ky), x)) == enlarge_0(kx, ky, x)),
     # None),
@@ -451,23 +461,45 @@ axioms = [
     #(ForAll([kx, ky, x], enlarge_0(kx, ky, ewmul_0(x, pool2d_max_0(kx, ky, 1, 1, PD_MODE_SAME, x))) == ewmul_0(enlarge_0(kx, ky, x), pool2d_max_0(kx, ky, 1, 1, PD_MODE_SAME, enlarge_0(kx, ky, x)))),
     # None),
 
-    (ForAll([kx, ky, x, y], enlarge_0(kx, ky, ewmul_0(x, y)) == ewmul_0(enlarge_0(kx, ky, x), enlarge_0(kx, ky, y))),
-     None),
-
     (ForAll([kx, ky, x, y], enlarge_0(kx, ky, ewadd_0(x, y)) == ewadd_0(enlarge_0(kx, ky, x), enlarge_0(kx, ky, y))),
-     None),
+     lambda : [(kx, ky, s, s)
+               for kx, ky in product(D, repeat=2)
+               for s in product(N, repeat=4)
+     ]),
+
+    (ForAll([kx, ky, x, y], enlarge_0(kx, ky, ewmul_0(x, y)) == ewmul_0(enlarge_0(kx, ky, x), enlarge_0(kx, ky, y))),
+     lambda : [(kx, ky, s, s)
+               for kx, ky in product(D, repeat=2)
+               for s in product(N, repeat=4)
+     ]),
 
     (ForAll([kx, ky, x, w], enlarge_0(kx, ky, scalar_mul_0(x, w)) == scalar_mul_0(enlarge_0(kx, ky, x), w)),
-     None),
+     lambda : [(kx, ky, s, ())
+               for kx, ky in product(D, repeat=2)
+               for s in product(N, repeat=4)
+     ]),
 
     (ForAll([kx, ky, x, y], enlarge_0(kx, ky, concat_0(0, x, y)) == concat_0(0, enlarge_0(kx, ky, x), enlarge_0(kx, ky, y))),
-     None),
+     lambda : [(kx, ky, s1, s2)
+               for kx, ky in product(D, repeat=2)
+               for s1 in product(N, repeat=4)
+               for s2 in product(N, repeat=4)
+               if all(s1[i] == s2[i] or i == 0 for i in range(4))
+     ]),
 
     (ForAll([kx, ky, x, y], enlarge_0(kx, ky, concat_0(1, x, y)) == concat_0(1, enlarge_0(kx, ky, x), enlarge_0(kx, ky, y))),
-     None),
+     lambda : [(kx, ky, s1, s2)
+               for kx, ky in product(D, repeat=2)
+               for s1 in product(N, repeat=4)
+               for s2 in product(N, repeat=4)
+               if all(s1[i] == s2[i] or i == 1 for i in range(4))
+     ]),
 
     (ForAll([kx, ky, x], enlarge_0(kx, ky, relu_0(x)) == relu_0(enlarge_0(kx, ky, x))),
-     None),
+     lambda : [(kx, ky, s)
+               for kx, ky in product(D, repeat=2)
+               for s in product(N, repeat=4)
+     ]),
 
     # concat is associative (wrong axiom - makes many others redundant)
     # (ForAll([ax, x, y, z], concat_0(ax, x, concat_0(ax, y,z)) == concat_0(ax, concat_0(ax, x, y), z)),
