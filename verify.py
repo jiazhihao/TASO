@@ -442,7 +442,7 @@ axioms = [
      lambda :[(s,) for dim in [2,3,4] for s in product(N, repeat=dim)] ),
 
     # const_iconv and const_pool
-    (ForAll([kx, ky], pool2d_avg_0(kx, ky, 1, 1, PD_MODE_SAME, const_iconv(kx, ky)) == const_pool(kx, ky)),
+    (ForAll([kx, ky], pool2d_avg_0(kx, ky, 1, 1, PD_MODE_SAME, const_iconv_0(kx, ky)) == const_pool_0(kx, ky)),
      None),
 
     # enlarge axioms
@@ -461,46 +461,46 @@ axioms = [
     #(ForAll([kx, ky, x], enlarge_0(kx, ky, ewmul_0(x, pool2d_max_0(kx, ky, 1, 1, PD_MODE_SAME, x))) == ewmul_0(enlarge_0(kx, ky, x), pool2d_max_0(kx, ky, 1, 1, PD_MODE_SAME, enlarge_0(kx, ky, x)))),
     # None),
 
-    (ForAll([kx, ky, x, y], enlarge_0(kx, ky, ewadd_0(x, y)) == ewadd_0(enlarge_0(kx, ky, x), enlarge_0(kx, ky, y))),
-     lambda : [(kx, ky, s, s)
-               for kx, ky in product(D, repeat=2)
-               for s in product(N, repeat=4)
-     ]),
-
-    (ForAll([kx, ky, x, y], enlarge_0(kx, ky, ewmul_0(x, y)) == ewmul_0(enlarge_0(kx, ky, x), enlarge_0(kx, ky, y))),
-     lambda : [(kx, ky, s, s)
-               for kx, ky in product(D, repeat=2)
-               for s in product(N, repeat=4)
-     ]),
-
-    (ForAll([kx, ky, x, w], enlarge_0(kx, ky, scalar_mul_0(x, w)) == scalar_mul_0(enlarge_0(kx, ky, x), w)),
-     lambda : [(kx, ky, s, ())
-               for kx, ky in product(D, repeat=2)
-               for s in product(N, repeat=4)
-     ]),
-
-    (ForAll([kx, ky, x, y], enlarge_0(kx, ky, concat_0(0, x, y)) == concat_0(0, enlarge_0(kx, ky, x), enlarge_0(kx, ky, y))),
-     lambda : [(kx, ky, s1, s2)
-               for kx, ky in product(D, repeat=2)
-               for s1 in product(N, repeat=4)
-               for s2 in product(N, repeat=4)
-               if all(s1[i] == s2[i] or i == 0 for i in range(4))
-     ]),
-
-    (ForAll([kx, ky, x, y], enlarge_0(kx, ky, concat_0(1, x, y)) == concat_0(1, enlarge_0(kx, ky, x), enlarge_0(kx, ky, y))),
-     lambda : [(kx, ky, s1, s2)
-               for kx, ky in product(D, repeat=2)
-               for s1 in product(N, repeat=4)
-               for s2 in product(N, repeat=4)
-               if all(s1[i] == s2[i] or i == 1 for i in range(4))
-     ]),
-
-    (ForAll([kx, ky, x], enlarge_0(kx, ky, relu_0(x)) == relu_0(enlarge_0(kx, ky, x))),
-     lambda : [(kx, ky, s)
-               for kx, ky in product(D, repeat=2)
-               for s in product(N, repeat=4)
-     ]),
-
+#    (ForAll([kx, ky, x, y], enlarge_0(kx, ky, ewadd_0(x, y)) == ewadd_0(enlarge_0(kx, ky, x), enlarge_0(kx, ky, y))),
+#     lambda : [(kx, ky, s, s)
+#               for kx, ky in product(D, repeat=2)
+#               for s in product(N, repeat=4)
+#     ]),
+#
+#    (ForAll([kx, ky, x, y], enlarge_0(kx, ky, ewmul_0(x, y)) == ewmul_0(enlarge_0(kx, ky, x), enlarge_0(kx, ky, y))),
+#     lambda : [(kx, ky, s, s)
+#               for kx, ky in product(D, repeat=2)
+#               for s in product(N, repeat=4)
+#     ]),
+#
+#    (ForAll([kx, ky, x, w], enlarge_0(kx, ky, scalar_mul_0(x, w)) == scalar_mul_0(enlarge_0(kx, ky, x), w)),
+#     lambda : [(kx, ky, s, ())
+#               for kx, ky in product(D, repeat=2)
+#               for s in product(N, repeat=4)
+#     ]),
+#
+#    (ForAll([kx, ky, x, y], enlarge_0(kx, ky, concat_0(0, x, y)) == concat_0(0, enlarge_0(kx, ky, x), enlarge_0(kx, ky, y))),
+#     lambda : [(kx, ky, s1, s2)
+#               for kx, ky in product(D, repeat=2)
+#               for s1 in product(N, repeat=4)
+#               for s2 in product(N, repeat=4)
+#               if all(s1[i] == s2[i] or i == 0 for i in range(4))
+#     ]),
+#
+#    (ForAll([kx, ky, x, y], enlarge_0(kx, ky, concat_0(1, x, y)) == concat_0(1, enlarge_0(kx, ky, x), enlarge_0(kx, ky, y))),
+#     lambda : [(kx, ky, s1, s2)
+#               for kx, ky in product(D, repeat=2)
+#               for s1 in product(N, repeat=4)
+#               for s2 in product(N, repeat=4)
+#               if all(s1[i] == s2[i] or i == 1 for i in range(4))
+#     ]),
+#
+#    (ForAll([kx, ky, x], enlarge_0(kx, ky, relu_0(x)) == relu_0(enlarge_0(kx, ky, x))),
+#     lambda : [(kx, ky, s)
+#               for kx, ky in product(D, repeat=2)
+#               for s in product(N, repeat=4)
+#     ]),
+#
     # concat is associative (wrong axiom - makes many others redundant)
     # (ForAll([ax, x, y, z], concat_0(ax, x, concat_0(ax, y,z)) == concat_0(ax, concat_0(ax, x, y), z)),
     #  lambda : [(ax, s1, s2, s3)
@@ -594,11 +594,10 @@ if __name__ == '__main__':
         #'graph_subst.pb': [178, 179, 387, 405, 429, 443, 444, 485, 486, 487, 488, 489, 490, 548, 549, 555, 556, 563, 564],
         #'graph_subst.pb': [201, 202, 209, 247, 259, 264, 265, 316, 527, 528, 529, 532, 573, 584, 585, 586, 607, 627, 628, 670, 671, 672, 673, 674, 675, 740, 741, 751, 752, 761, 762],
         'graph_subst.pb': [202, 209, 254, 255, 260, 307, 308, 518, 536, 560, 580, 581, 620, 621, 622, 623, 624, 625, 681, 682, 688, 689, 695, 696, 697],
+        'new_graph_subst.pb': [],
     }[os.path.basename(sys.argv[1])]
 
     for i, rule in enumerate(rules.rule):
-        if i < 200:
-            continue
         if i in blacklist:
             continue
         # print("Verifying rule: {} with {} outputs\n".format(rule, len(rule.mappedOutput)))
