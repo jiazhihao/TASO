@@ -323,6 +323,7 @@ public:
     if (input.numDim != 4) return false;
     if ((input.dim[2] > kernelH) || (input.dim[3] > kernelW)) return false;
     if ((input.dim[2] == kernelH) && (input.dim[3] == kernelW)) return false;
+    if (input.opIdx >= 0) return false;
     int offH = (kernelH - input.dim[2]) / 2;
     int offW = (kernelW - input.dim[3]) / 2;
     outputs[0].numDim = 4;
@@ -979,7 +980,7 @@ public:
   }
   bool compute(int n, TensorTemp* inputs, int opIdx)
   {
-    for (int i = 1; i < n; i++)
+    for (int i = 0; i < n; i++)
       if (inputs[i].numDim != myNumDim) return false;
     if (axis >= myNumDim) return false;
     for (int i = 1; i < n; i++)
