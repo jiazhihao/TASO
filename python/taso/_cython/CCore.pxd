@@ -19,8 +19,8 @@ from libcpp.memory cimport shared_ptr
 from libcpp.vector cimport vector
 from libcpp cimport bool
 
-cdef extern from "xflow/ops.h" namespace "XFlow":
-    # This must be consistent with include/xflow/ops.h
+cdef extern from "taso/ops.h" namespace "taso":
+    # This must be consistent with include/taso/ops.h
     cdef enum OpType:
         OP_INPUT
         OP_WEIGHT
@@ -50,7 +50,7 @@ cdef extern from "xflow/ops.h" namespace "XFlow":
         OP_CONSTANT_ONE,
         OP_CONSTANT_POOL,
 
-    # This must be consistent with include/xflow/ops.h
+    # This must be consistent with include/taso/ops.h
     cdef enum PMParameter:
         PM_OP_TYPE
         PM_NUM_INPUTS
@@ -68,19 +68,19 @@ cdef extern from "xflow/ops.h" namespace "XFlow":
         PM_OUTSHUFFLE
         PM_MERGE_GCONV_COUNT
 
-    # This must be consistent with include/xflow/ops.h
+    # This must be consistent with include/taso/ops.h
     cdef enum ActiMode:
         AC_MODE_NONE
         AC_MODE_SIGMOID
         AC_MODE_RELU
         AC_MODE_TANH
 
-    # This must be consistent with include/xflow/ops.h
+    # This must be consistent with include/taso/ops.h
     cdef enum PaddingMode:
         PD_MODE_SAME
         PD_MODE_VALID
 
-    # This must be consistent with include/xflow/ops.h
+    # This must be consistent with include/taso/ops.h
     cdef enum ConstantMode:
         CN_MODE_IDENTITY
         CN_MODE_ZEROS

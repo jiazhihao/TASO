@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include "xflow/ops.h"
-using namespace XFlow;
+#include "taso/ops.h"
+using namespace taso;
 
 // Merge multiple group convs to a single group conv
 TensorHandle Graph::merge_gconv(const TensorHandle _weight,

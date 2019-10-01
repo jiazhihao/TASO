@@ -15,10 +15,10 @@
 
 #ifndef _SUBSTITUTION_H_
 #define _SUBSTITUTION_H_
-#include "xflow/ops.h"
+#include "taso/ops.h"
 #include "rules.pb.h"
 #include <queue>
-namespace XFlow {
+namespace taso {
 
 enum Compare {
   COMPARE_EQ,

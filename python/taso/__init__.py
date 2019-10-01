@@ -2,7 +2,7 @@ from .core import *
 import onnx
 from onnx import helper, TensorProto, numpy_helper
 
-def _check_output(xf_output, onnx_output):
+def _check_output(taso_output, onnx_output):
     # TODO: check output match
     return True
 
@@ -302,8 +302,11 @@ def export_onnx(graph):
         graph_outputs.append(helper.make_tensor_value_info(_output_tensor_name(graph, op, idx),
                              TensorProto.FLOAT, graph.get_output_dims(op, idx)))
     onnx_graph = helper.make_graph(graph_nodes, 'main', graph_inputs, graph_outputs, graph_initializers)
-    onnx_model = helper.make_model(onnx_graph, producer_name='XFlow Optimized Model')
+    onnx_model = helper.make_model(onnx_graph, producer_name='TASO Optimized Model')
     return onnx_model
 
 def optimize(graph, alpha = 1.0, budget = 1000):
     return graph.optimize(alpha, budget)
+
+# Current TASO Version
+__version__ = "0.1.0"

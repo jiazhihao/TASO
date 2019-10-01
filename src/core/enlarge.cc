@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include "xflow/ops.h"
-using namespace XFlow;
+#include "taso/ops.h"
+using namespace taso;
 
 // Enlarge the third and forth dimension of _w1 to the same size as _w2
 TensorHandle Graph::enlarge(const TensorHandle _w1,

@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include "xflow/ops.h"
-using namespace XFlow;
+#include "taso/ops.h"
+using namespace taso;
 
 void Graph::split(Tensor _input, int axis, int _num,
                   const int* _sizes, Tensor* outputs)

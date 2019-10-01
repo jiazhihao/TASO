@@ -43,7 +43,7 @@ using namespace nvinfer1;
 #include <memory>
 using namespace std;
 
-namespace XFlow{
+namespace taso {
 
 #define MAX_DIM 4
 #define MAX_NUM_SPLITS 32
@@ -322,7 +322,7 @@ enum DIMParameter {
   DIM_ND = 310,
 };
 
-//This must be consistent with python/xflow/_cython/CCore.pxd
+//This must be consistent with python/taso/_cython/CCore.pxd
 enum OpType {
   OP_INPUT,
   OP_WEIGHT,
@@ -353,7 +353,7 @@ enum OpType {
   OP_CONSTANT_POOL,
 };
 
-//That this must be consistent with python/xflow/_cython/CCore.pxd
+//That this must be consistent with python/taso/_cython/CCore.pxd
 enum ActiMode {
   AC_MODE_NONE,
   AC_MODE_SIGMOID,
@@ -361,13 +361,13 @@ enum ActiMode {
   AC_MODE_TANH,
 };
 
-//That this must be consistent with python/xflow/_cython/CCore.pxd
+//That this must be consistent with python/taso/_cython/CCore.pxd
 enum PaddingMode {
   PD_MODE_SAME,
   PD_MODE_VALID,
 };
 
-//That this must be consistent with python/xflow/_cython/CCore.pxd
+//That this must be consistent with python/taso/_cython/CCore.pxd
 //enum ConstantMode {
 //  CN_MODE_IDENTITY,
 //  CN_MODE_ZEROS,
@@ -1099,5 +1099,5 @@ public:
   DATATYPE *scalePtr, *runningMean, *runningVar, *saveMean, *saveVar;
 };
 
-} // namespace XFlow
+} // namespace taso
 #endif

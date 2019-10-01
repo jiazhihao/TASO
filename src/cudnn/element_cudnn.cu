@@ -1,4 +1,4 @@
-/* Copyright 2018 Stanford
+/* Copyright 2019 Stanford
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-#include "xflow/ops.h"
-#include "xflow/cuda_helper.h"
-using namespace XFlow;
+#include "taso/ops.h"
+#include "taso/cuda_helper.h"
+using namespace taso;
 
 void Element::map(void)
 {

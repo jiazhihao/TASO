@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include "xflow/ops.h"
-using namespace XFlow;
+#include "taso/ops.h"
+using namespace taso;
 
 TensorHandle Graph::relu(const TensorHandle _input, bool _inPlace)
 {

@@ -1,5 +1,5 @@
-#include "xflow/cuda_helper.h"
-using namespace XFlow;
+#include "taso/cuda_helper.h"
+using namespace taso;
 
 __global__
 void assign_kernel(float* ptr, int size, float value)

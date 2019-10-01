@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-#include "xflow/ops.h"
-#include "substitution.h"
+#include "taso/ops.h"
+#include "taso/substitution.h"
 #include <iostream>
 #include <fstream>
 using namespace std;
-using namespace XFlow;
+using namespace taso;
 
 const Op Op::INVALID_OP = Op();
 const SplitInfo SplitInfo::NO_SPLIT = SplitInfo();

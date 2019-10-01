@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include "xflow/ops.h"
-using namespace XFlow;
+#include "taso/ops.h"
+using namespace taso;
 
 TensorHandle Graph::concat(int axis, int n, const TensorHandle* _inputs)
 {

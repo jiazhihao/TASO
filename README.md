@@ -1,1 +1,5 @@
-Artifacts for SOSP'19 paper Optimizing Deep Learning Computation with Automatic Generation of Graph Substitutions 
+Tensor Algebra SuperOptimizer for Deep Learning
+===============================================
+
+TASO is a Tensor Algebra SuperOptimizer for deep neural network architectures. 
+

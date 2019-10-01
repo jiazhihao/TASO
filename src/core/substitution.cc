@@ -13,9 +13,8 @@
  * limitations under the License.
  */
 
-#include "substitution.h"
-
-using namespace XFlow;
+#include "taso/substitution.h"
+using namespace taso;
 
 GraphXfer* create_avg_pool_conv(Model* model)
 {

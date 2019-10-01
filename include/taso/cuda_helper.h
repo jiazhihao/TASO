@@ -3,7 +3,7 @@
 
 #include <sstream>
 #include <iostream>
-#include "xflow/ops.h"
+#include "taso/ops.h"
 #include <cudnn.h>
 
 #define FatalError(s) do {                                             \
@@ -44,11 +44,11 @@ inline int GET_BLOCKS(const int N)
   return (ret > BLOCK_SIZE_LIMIT) ? BLOCK_SIZE_LIMIT : ret;
 }
 
-void helperSetTensorDescriptor(const XFlow::Tensor& tensor,
+void helperSetTensorDescriptor(const taso::Tensor& tensor,
                                cudnnTensorDescriptor_t tensorDesc);
 
 __global__
 void assign_kernel(float* ptr, int size, float value);
 
-cudnnActivationMode_t get_activation_mode(XFlow::ActiMode activation);
+cudnnActivationMode_t get_activation_mode(taso::ActiMode activation);
 #endif

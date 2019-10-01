@@ -30,15 +30,15 @@ def config_cython():
     try:
         from Cython.Build import cythonize
         ret = []
-        path = "xflow/_cython"
+        path = "taso/_cython"
         for fn in os.listdir(path):
             if not fn.endswith(".pyx"):
                 continue
             ret.append(Extension(
-                "xflow.%s" % fn[:-4],
+                "taso.%s" % fn[:-4],
                 ["%s/%s" % (path, fn)],
                 include_dirs=["../include", "/usr/local/cuda/include"],
-                libraries=["xf_runtime"],
+                libraries=["taso_runtime"],
                 extra_compile_args=["-DUSE_CUDNN", "-std=c++11"],
                 extra_link_args=[],
                 language="c++"))
@@ -55,16 +55,16 @@ setup_args = {}
 #    LIB_LIST[i] = os.path.relpath(path, curr_path)
 #    setup_args = {
 #        "include_package_data": True,
-#        "data_files": [('xflow', LIB_LIST)]
+#        "data_files": [('taso', LIB_LIST)]
 #    }
 
-setup(name='xflow',
-      #version=__version__,
-      description="XFlow: A DNN Computation Graph Superoptimizer",
+setup(name='taso',
+      version="0.1.0",
+      description="TASO: A Tensor Algebra SuperOptimizer for Deep Learning",
       zip_safe=False,
       install_requires=[],
       packages=find_packages(),
-      url='https://github.com/jiazhihao/xflow',
+      url='https://github.com/jiazhihao/taso',
       ext_modules=config_cython(),
       #**setup_args,
       )

@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-#include "xflow/ops.h"
-#include "xflow/cuda_helper.h"
-using namespace XFlow;
+#include "taso/ops.h"
+#include "taso/cuda_helper.h"
+using namespace taso;
 
 void Conv2D::map(void)
 {
