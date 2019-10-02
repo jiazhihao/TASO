@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 3.2)
 project(TASO LANGUAGES CXX CUDA)
 
-#required packages
-find_package(Protobuf REQUIRED)
-
 if (EXISTS ${CMAKE_CURRENT_BINARY_DIR}/config.cmake)
   include (${CMAKE_CURRENT_BINARY_DIR}/config.cmake)
 else()
@@ -13,7 +10,10 @@ else()
 endif()
 
 #include directories
+include_directories(${CMAKE_INCLUDE_PATH})
+include_directories(${CMAKE_BINARY_DIR}) # to include protobuf headeer files
 include_directories("include")
+include_directories("build")
 include_directories("src/core")
 
 #initial variables
@@ -21,9 +21,17 @@ set(TASO_LIBS "")
 set(TASO_LINK_LIBS ${CMAKE_DL_LIBS})
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+#Generate protobuf files
+find_package(Protobuf REQUIRED)
+message(STATUS "PROTOBUF=" ${PROTOBUF_LIBRARY})
+include_directories(${PROTOBUF_INCLUDE_DIR})
+protobuf_generate_cpp(PROTO_CPPS PROTO_HDRS src/core/rules.proto)
+list(APPEND TASO_LINK_LIBS ${PROTOBUF_LIBRARY})
+
 file(GLOB_RECURSE TASO_SRCS
   src/core/*.cc
   )
+list(APPEND TASO_SRCS ${PROTO_CPPS})
 
 file(GLOB_RECURSE TASO_CUDA_SRCS
   src/cudnn/*.cu
@@ -50,17 +58,13 @@ if (CUDA_FOUND)
   include_directories(${CUDA_INCLUDE_DIRS})
   message(STATUS "CUDA_INCLUDE_DIR=" ${CUDA_INCLUDE_DIRS})
   add_definitions(-DUSE_CUDNN)
-  list(APPEND TASO_LINKER_LIBS ${CUDA_CUDART_LIBRARY})
-  list(APPEND TASO_LINKER_LIBS ${CUDA_CUDA_LIBRARY})
-  list(APPEND TASO_LINKER_LIBS ${CUDA_CUDNN_LIBRARY})
-  list(APPEND TASO_LINKER_LIBS ${CUDA_CUBLAS_LIBRARY})
+  list(APPEND TASO_LINK_LIBS ${CUDA_CUDART_LIBRARY})
+  list(APPEND TASO_LINK_LIBS ${CUDA_CUDA_LIBRARY})
+  list(APPEND TASO_LINK_LIBS ${CUDA_CUDNN_LIBRARY})
+  list(APPEND TASO_LINK_LIBS ${CUDA_CUBLAS_LIBRARY})
 elseif(CUDA_FOUND)
   message(FATAL_ERROR "Cannot find CUDA, USE_CUDA=" ${USE_CUDA})
 endif(CUDA_FOUND)
-
-#set ProtocolBuffer
-message(STATUS "PROTOBUF=" ${PROTOBUF_LIBRARY})
-list(APPEND TASO_LINKER_LIBS ${PROTOBUF_LIBRARY})
 
 add_library(taso_runtime SHARED ${TASO_SRCS})
 
