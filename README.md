@@ -42,7 +42,9 @@ onnx.save(new_model, "/path/to/save/new/onnx/model")
 ### Build DNN Architectures from Scratch
 
 The following example shows how to build and optimize a DNN model suing the TASO python inferface. More example DNN architectures are available in the `examples` subfolder.
-
+<div align="center">
+  <img src="https://github.com/jiazhihao/TASO/blob/master/figures/graph_subst.pdf">
+</div>
 ```python
 import taso
 import onnx
