@@ -9,12 +9,13 @@ TASO is a Tensor Algebra SuperOptimizer that automatically optimizes deep neural
 * To get started, clone the TASO source code from github.
 ```
 git clone https://www.github.com/jiazhihao/taso
+cd taso
 ```
 
 * Build the TASO runtime library. The configuration of the TASO runtime can be modified by `config.cmake`. The default configuration only builds the CUDA backend, and you can change `set(USE_MKL OFF)` to `set(USE_MKL ON` to enable the MKL CPU backend.
 ```
-mkdir build; cd build; make -j 4
-sudo make install
+mkdir build; cd build; cmake ..
+sudo make install -j 4
 ```
 
 * Install the TASO python package.
