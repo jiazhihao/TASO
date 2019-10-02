@@ -41,7 +41,7 @@ onnx.save(new_model, "/path/to/save/new/onnx/model")
 
 ### Build DNN Architectures from Scratch
 
-The following example shows how to build and optimize a DNN model suing the TASO python inferface. More example DNN architectures are available in the `examples` subfolder.
+The following code snippet shows how to build the left-most DNN graph depicted in the figure. TASO automatically performs a series of non-trivial transformations, and eventually discovers the right-most DNN graph, which is 1.3x faster on a V100 GPU. More example DNN architectures are available in the `examples` subfolder.
 
 <div align="center">
   <img src="https://github.com/jiazhihao/TASO/blob/master/figures/graph_subst.png">
@@ -56,8 +56,12 @@ graph = taso.new_graph()
 input = graph.new_input(dims=(1,128,56,56))
 w1 = graph.new_weight(dims=(128,128,3,3))
 w2 = graph.new_weight(dims=(128,128,1,1))
-left = graph.conv2d(input=input, weight=w1, strides=(1,1), padding="SAME")
-right = graph.conv2d(input=input, weight=w2, strides(1,1), padding="SAME")
+w3 = graph.new_weight(dims=(128,128,3,3))
+left = graph.conv2d(input=input, weight=w1, strides=(1,1), padding="SAME", activation="RELU")
+left = graph.conv2d(input=input, weight=w3, strides=(1,1), padding="SAME")
+right = graph.conv2d(input=input, weight=w2, strides(1,1), padding="SAME", activation="RELU")
+output = graph.add(left, right)
+output = graph.relu(output)
 
 #Optimize DNN model
 new_graph = taso.optimize(graph)
