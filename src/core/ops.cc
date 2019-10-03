@@ -273,7 +273,7 @@ Graph* Graph::optimize(float alpha, int budget)
   Graph *bestGraph = this;
   float bestCost = total_cost();
   //printf("MetaFlow Cost = %.4lfms\n", bestCost);
-  printf("MetaFlow w/ cuDNN: end-to-end inference time =\n"
+  printf("Input graph: end-to-end execution time =\n"
          "%.8lf ms (average of 100 runs)\n", run());
   print_costs();
 
@@ -316,7 +316,7 @@ Graph* Graph::optimize(float alpha, int budget)
   bestGraph = bestGraph->preprocess_weights();
   printf("        ===== Finish Cost-Based Backtracking Search =====\n\n");
   //printf("bestCost = %.4lf\n", bestGraph->total_cost());
-  printf("XFlow w/ cuDNN: end-to-end inference time =\n");
+  printf("Optimized graph: end-to-end execution time =\n");
   printf("%.8lf ms (average of 100 runs)\n", bestGraph->run());
   bestGraph->print_costs();
 
