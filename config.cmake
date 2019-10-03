@@ -1,2 +1,2 @@
-set(USE_CUDA /usr/local/cuda)
+set(USE_CUDA ON)
 set(USE_CUDNN ON)

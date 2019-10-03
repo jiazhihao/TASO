@@ -4,6 +4,16 @@ TASO is a Tensor Algebra SuperOptimizer that automatically optimizes deep neural
 
 ## Installation
 
+### Prerequisties
+
+* Recent C++ compiler supporting C++11
+* CMAKE 3.2 or higher
+* ProtocolBuffer 3.6.1 or higher
+* Cython 0.28 or higher
+* ONNX 1.5 or higher
+* CUDA 9.0 or higher and CUDNN 7.0 or higher
+* MKL support is coming
+
 ### Install from Source
 
 * To get started, clone the TASO source code from github.

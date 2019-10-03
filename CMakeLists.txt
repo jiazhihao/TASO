@@ -13,8 +13,8 @@ endif()
 include_directories(${CMAKE_INCLUDE_PATH})
 include_directories(${CMAKE_BINARY_DIR}) # to include protobuf headeer files
 include_directories("include")
-include_directories("build")
-include_directories("src/core")
+#include_directories("build")
+#include_directories("src/core")
 
 #initial variables
 set(TASO_LIBS "")
@@ -73,7 +73,7 @@ set_target_properties(taso_runtime
 
 target_compile_features(taso_runtime PUBLIC cxx_std_11)
 
-target_link_libraries(taso_runtime ${TASO_LINKER_LIBS})
+target_link_libraries(taso_runtime ${TASO_LINK_LIBS})
 
 target_include_directories(taso_runtime
   PUBLIC ${PROJECT_SOURCE_DIR}/include)
