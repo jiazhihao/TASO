@@ -65,15 +65,21 @@ def _conv2d(op, graph, tensors, initializer):
 
 def _dropout(op, graph, tensors, initializer):
     inputs = _get_inputs(op, tensors)
-    assert len(inputs) == 1, "Dropout requires exactly one input"
+    assert len(inputs) == 1, "Dropout takes exactly one input"
     attrs = _parse_attribute(op.attribute)
     rate = attrs["ratio"]
     outputs = graph.dropout(inputs[0], rate)
     return outputs
 
+def _identity(op, graph, tensors, initializer):
+    inputs = _get_inputs(op, tensors)
+    assert len(inputs) == 1, "Identity takes exactly one input"
+    outputs = graph.dropout(inputs[0], 0.0)
+    return outputs
+
 def _matmul(op, graph, tensors, initializer):
     inputs = _get_inputs(op, tensors)
-    assert len(inputs) == 2, "Matmul requires exactly two inputs"
+    assert len(inputs) == 2, "Matmul takes exactly two inputs"
     outputs = graph.matmul(inputs[0], inputs[1])
     return outputs
 
@@ -151,6 +157,17 @@ def _transpose(op, graph, tensors, initializer):
     outputs = graph.transpose(tensors[op.input[0]], tuple(perm), shuffle=True)
     return outputs
 
+def _unsqueeze(op, graph, tensors, initializer):
+    assert len(op.input) == 1, "Unsqueeze takes exactly one input"
+    assert op.input[0] in tensors
+    attrs = _parse_attribute(op.attribute)
+    axes_ints = attrs["axes"]
+    axes = list()
+    for i in axes_ints:
+        axes.append(i)
+    outputs = graph.unsqueeze(tensors[op.input[0]], axes)
+    return outputs
+
 # Add all supported operators
 xf_operators = dict()
 xf_operators['Add'] = _add
@@ -158,6 +175,7 @@ xf_operators['BatchNormalization'] = _batchnorm
 xf_operators['Concat'] = _concat
 xf_operators['Conv'] = _conv2d
 xf_operators['Dropout'] = _dropout
+xf_operators['Identity'] = _identity
 xf_operators['Pad'] = _pad
 xf_operators['Reshape'] = _reshape
 xf_operators['Relu'] = _relu
@@ -166,6 +184,7 @@ xf_operators['MaxPool'] = _maxpool2d
 xf_operators['AveragePool'] = _avgpool2d
 xf_operators['Split'] = _split
 xf_operators['Transpose'] = _transpose
+xf_operators['Unsqueeze'] = _unsqueeze
 
 def new_graph(print_measurements = False):
     graph = core.PyGraph()
@@ -190,17 +209,19 @@ def load(filename):
         dims = list()
         for d in t.type.tensor_type.shape.dim:
             dims.append(d.dim_value)
-        if "data" in t.name:
+        print(dims)
+        weight_data = None
+        for weight in model.graph.initializer:
+            if (weight.name == t.name):
+                weight_data = numpy_helper.to_array(weight)
+        # We classify an input to be a pure input if we cannot find its weights
+        if weight_data is None:
             tensors[t.name] = graph.new_input(dims=tuple(dims))
         else:
-            weight_data = None
-            for weight in model.graph.initializer:
-                if (weight.name == t.name):
-                    weight_data = numpy_helper.to_array(weight)
-            #assert(weight_data is not None)
             tensors[t.name] = graph.new_weight(dims=tuple(dims), data = weight_data)
 
     for op in model.graph.node:
+        print(op.op_type)
         if op.op_type in xf_operators:
             outputs = xf_operators[op.op_type](op, graph, tensors, model.graph.initializer)
             if not isinstance(outputs, list):

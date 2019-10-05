@@ -76,9 +76,9 @@ Activation::~Activation(void)
 {
 }
 
-bool Activation::get_parameter(PMParameter para, int* value)
+bool Activation::get_int_parameter(PMParameter para, int* value)
 {
-  return OpBase::get_parameter(para, value);
+  return OpBase::get_int_parameter(para, value);
 }
 
 void Activation::collect_costs(float& exe_time, float& flops,

@@ -96,21 +96,9 @@ NoOp::NoOp(Model* _model, Tensor _input, OpType type)
 NoOp::~NoOp(void)
 {}
 
-bool NoOp::get_parameter(PMParameter para, int* value)
+bool NoOp::get_int_parameter(PMParameter para, int* value)
 {
-  switch (para) {
-    case PM_OP_TYPE:
-      *value = (int) type;
-      return true;
-    case PM_NUM_INPUTS:
-      *value = numInputs;
-      return true;
-    case PM_NUM_OUTPUTS:
-      *value = numOutputs;
-      return true;
-    default:
-      return false;
-  }
+  return OpBase::get_int_parameter(para, value);
 }
 
 void NoOp::map(void)

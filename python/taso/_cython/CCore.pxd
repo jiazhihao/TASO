@@ -49,6 +49,8 @@ cdef extern from "taso/ops.h" namespace "taso":
         OP_CONSTANT_ICONV,
         OP_CONSTANT_ONE,
         OP_CONSTANT_POOL,
+        OP_SQUEEZE,
+        OP_UNSQUEEZE,
 
     # This must be consistent with include/taso/ops.h
     cdef enum PMParameter:
@@ -67,6 +69,7 @@ cdef extern from "taso/ops.h" namespace "taso":
         PM_PERM
         PM_OUTSHUFFLE
         PM_MERGE_GCONV_COUNT
+        PM_AXES
 
     # This must be consistent with include/taso/ops.h
     cdef enum ActiMode:
@@ -163,6 +166,8 @@ cdef extern from "taso/ops.h" namespace "taso":
         TensorHandle transpose(const TensorHandle input,
                                const vector[int] perm,
                                bool shuffle)
+        TensorHandle unsqueeze(const TensorHandle input,
+                               const vector[int] axes)
         TensorHandle new_input(int ndim, const int* dims)
         TensorHandle new_weight(int ndim, const int* dims, const float* data)
         Graph* optimize(float alpha, int budget)

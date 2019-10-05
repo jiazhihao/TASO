@@ -116,7 +116,7 @@ Transpose::Transpose(Model* _model, Tensor _input,
 Transpose::~Transpose(void)
 {}
 
-bool Transpose::get_parameter(PMParameter para, int* value)
+bool Transpose::get_int_parameter(PMParameter para, int* value)
 {
   switch (para) {
     case PM_NUMDIM:
@@ -129,7 +129,7 @@ bool Transpose::get_parameter(PMParameter para, int* value)
       *value = (int) shuffle;
       return true;
     default:
-      return OpBase::get_parameter(para, value);
+      return OpBase::get_int_parameter(para, value);
   }
 }
 

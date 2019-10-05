@@ -50,5 +50,8 @@ void helperSetTensorDescriptor(const taso::Tensor& tensor,
 __global__
 void assign_kernel(float* ptr, int size, float value);
 
+__global__
+void copy_kernel(float* dst, const float* src, int size);
+
 cudnnActivationMode_t get_activation_mode(taso::ActiMode activation);
 #endif

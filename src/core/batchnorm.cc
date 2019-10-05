@@ -69,9 +69,9 @@ BatchNorm::BatchNorm(Model* _model, Tensor _input, Tensor _scale,
 BatchNorm::~BatchNorm(void)
 {}
 
-bool BatchNorm::get_parameter(PMParameter para, int* value)
+bool BatchNorm::get_int_parameter(PMParameter para, int* value)
 {
-  return OpBase::get_parameter(para, value);
+  return OpBase::get_int_parameter(para, value);
 }
 
 void BatchNorm::collect_costs(float& exe_time, float& flops,

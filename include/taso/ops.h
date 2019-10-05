@@ -281,6 +281,7 @@ struct Tensor {
 //typedef shared_ptr<Tensor> TensorHandle;
 typedef Tensor* TensorHandle;
 
+//This must be consistent with python/taso/_cython/CCore.pxd
 enum PMParameter {
   PM_OP_TYPE,   	// AnyOp
   PM_NUM_INPUTS,	// AnyOp
@@ -297,6 +298,7 @@ enum PMParameter {
   PM_PERM,		// Transpose
   PM_OUTSHUFFLE,	// Transpose
   PM_MERGE_GCONV_COUNT, // MergeGConv
+  PM_AXES,		// Squeeze, Unsqueeze
 };
 
 enum TNParameter {
@@ -340,7 +342,6 @@ enum OpType {
   OP_SPLIT,
   OP_RESHAPE,
   OP_TRANSPOSE,
-  // RNN operators
   OP_EW_ADD,
   OP_EW_MUL,
   OP_MATMUL,
@@ -351,6 +352,8 @@ enum OpType {
   OP_CONSTANT_ICONV,
   OP_CONSTANT_ONE,
   OP_CONSTANT_POOL,
+  OP_SQUEEZE,
+  OP_UNSQUEEZE,
 };
 
 //That this must be consistent with python/taso/_cython/CCore.pxd
@@ -386,7 +389,9 @@ public:
          Tensor input4, Model* _model, OpType _type);
   OpBase(int n, Tensor* inputs, Model* _model, OpType _type);
   virtual bool get_input_parameter(TNParameter, DIMParameter, int*);
-  virtual bool get_parameter(PMParameter, int*);
+  virtual bool get_int_parameter(PMParameter, int*);
+  //virtual bool get_float_parameter(PMParameter, float*);
+  //virtual bool get_ints_parameter(PMParameter, std::vector<int>*);
   virtual void forward(bool block = false) = 0;
   virtual void map(void) = 0;
   virtual void unmap(void) = 0;
@@ -459,8 +464,10 @@ public:
                     bool _inPlace = true);
   TensorHandle sigmoid(const TensorHandle _input,
                        bool _inPlace = true);
+  TensorHandle squeeze(const TensorHandle input, const std::vector<int>& axes);
   TensorHandle tanh(const TensorHandle _input,
                     bool _inPlace = true);
+  TensorHandle unsqueeze(const TensorHandle input, const std::vector<int>& axes);
   TensorHandle batchnorm(const TensorHandle _input,
                          const TensorHandle _scale,
                          const TensorHandle _bias,
@@ -522,7 +529,7 @@ public:
   void forward(bool block);
   void map(void);
   void unmap(void);
-  bool get_parameter(PMParameter para, int*);
+  bool get_int_parameter(PMParameter para, int*);
   void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
 };
 
@@ -536,7 +543,7 @@ public:
   void forward(bool block);
   void map(void);
   void unmap(void);
-  bool get_parameter(PMParameter para, int*);
+  bool get_int_parameter(PMParameter para, int*);
   void get_padding(int* padH, int* padW);
   void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
 #ifdef USE_CUDNN
@@ -569,7 +576,7 @@ public:
   void forward(bool block);
   void map(void);
   void unmap(void);
-  bool get_parameter(PMParameter para, int*);
+  bool get_int_parameter(PMParameter para, int*);
   void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
 public:
   int outputC;
@@ -587,7 +594,7 @@ public:
   void forward(bool block);
   void map(void);
   void unmap(void);
-  bool get_parameter(PMParameter para, int*);
+  bool get_int_parameter(PMParameter para, int*);
   void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
 };
 
@@ -599,7 +606,7 @@ public:
          int _strideH, int _strideW,
          PaddingMode _padding, ActiMode _activation);
   ~Pool2D(void);
-  bool get_parameter(PMParameter para, int*);
+  bool get_int_parameter(PMParameter para, int*);
   void get_padding(int* padH, int* padW);
   void forward(bool block);
   void map(void);
@@ -624,7 +631,7 @@ class Reshape : public OpBase {
 public:
   Reshape(Model* _model, Tensor _input, const std::vector<int>& shape);
   ~Reshape(void);
-  bool get_parameter(PMParameter para, int*);
+  bool get_int_parameter(PMParameter para, int*);
   void forward(bool block);
   void map(void);
   void unmap(void);
@@ -637,7 +644,7 @@ public:
             const std::vector<int>& perm,
             bool _shuffle);
   ~Transpose(void);
-  bool get_parameter(PMParameter para, int*);
+  bool get_int_parameter(PMParameter para, int*);
   void forward(bool block);
   void map(void);
   void unmap(void);
@@ -651,7 +658,7 @@ class Activation : public OpBase {
 public:
   Activation(Model* _model, Tensor _input, OpType _type, bool _inPlace);
   ~Activation(void);
-  bool get_parameter(PMParameter para, int*);
+  bool get_int_parameter(PMParameter para, int*);
   void forward(bool block);
   void map(void);
   void unmap(void);
@@ -669,7 +676,7 @@ public:
   BatchNorm(Model* _model, Tensor _input, Tensor _scale,
             Tensor _bias, Tensor _mean, Tensor _var);
   ~BatchNorm(void);
-  bool get_parameter(PMParameter para, int*);
+  bool get_int_parameter(PMParameter para, int*);
   void forward(bool block);
   void map(void);
   void unmap(void);
@@ -689,7 +696,7 @@ class Concat : public OpBase {
 public:
   Concat(Model* _model, int _axis, int _n, Tensor* _inputs, bool* _needCopy);
   ~Concat(void);
-  bool get_parameter(PMParameter para, int*);
+  bool get_int_parameter(PMParameter para, int*);
   void forward(bool block);
   void map(void);
   void unmap(void);
@@ -703,7 +710,7 @@ class Split : public OpBase {
 public:
   Split(Model* _model, Tensor _input, int axis, int n, int* sizes);
   ~Split(void);
-  bool get_parameter(PMParameter para, int*);
+  bool get_int_parameter(PMParameter para, int*);
   void forward(bool block);
   void map(void);
   void unmap(void);
@@ -717,7 +724,7 @@ class NoOp : public OpBase {
 public:
   NoOp(Model* _model, Tensor _input, OpType _type);
   ~NoOp(void);
-  bool get_parameter(PMParameter para, int*);
+  bool get_int_parameter(PMParameter para, int*);
   void forward(bool block);
   void map(void);
   void unmap(void);
@@ -728,7 +735,7 @@ class Element : public OpBase {
 public:
   Element(Model* _model, OpType _type, Tensor _t1, Tensor _t2);
   ~Element(void);
-  bool get_parameter(PMParameter para, int*);
+  bool get_int_parameter(PMParameter para, int*);
   void forward(bool block);
   void map(void);
   void unmap(void);
@@ -744,7 +751,7 @@ class Enlarge : public OpBase {
 public:
   Enlarge(Model* _model, Tensor _w1, Tensor _w2);
   ~Enlarge(void);
-  bool get_parameter(PMParameter para, int*);
+  bool get_int_parameter(PMParameter para, int*);
   void forward(bool block);
   void map(void);
   void unmap(void);
@@ -755,13 +762,39 @@ class MergeGConv : public OpBase {
 public:
   MergeGConv(Model* _model, const Tensor& _weight, int count);
   ~MergeGConv(void);
-  bool get_parameter(PMParameter para, int*);
+  bool get_int_parameter(PMParameter para, int*);
   void forward(bool block);
   void map(void);
   void unmap(void);
   void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
 public:
   int count;
+};
+
+class Squeeze : public OpBase {
+public:
+  Squeeze(Model* _model, const Tensor& input, const std::vector<int>& axes);
+  ~Squeeze(void);
+  bool get_int_parameter(PMParameter para, int*);
+  void forward(bool block);
+  void map(void);
+  void unmap(void);
+  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
+public:
+  std::vector<int> axes;
+};
+
+class Unsqueeze : public OpBase {
+public:
+  Unsqueeze(Model* _model, const Tensor& input, const std::vector<int>& axes);
+  ~Unsqueeze(void);
+  bool get_int_parameter(PMParameter para, int*);
+  void forward(bool block);
+  void map(void);
+  void unmap(void);
+  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
+public:
+  std::vector<int> axes;
 };
 
 //keys are (ndim, dims[0..ndims-1], constant_mode
@@ -830,7 +863,6 @@ struct MulCompare {
     return false;
   };
 };
-
 
 // keys are (inputN, inputC, inputH, inputW, kernelH, kernelW,              
 //           strideH, strideW, padding, activation, type,
@@ -1004,6 +1036,36 @@ struct MergeGConvCompare {
   };
 };
 
+struct SqueezeKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + MAX_DIM;
+  SqueezeKey(const Tensor& input, const std::vector<int>& axes);
+  int keys[KEY_LENGTH];
+};
+
+struct SqueezeCompare {
+  bool operator()(const SqueezeKey& a, const SqueezeKey& b) const {
+    for (int i = 0; i < SqueezeKey::KEY_LENGTH; i++)
+      if (a.keys[i] != b.keys[i])
+        return a.keys[i] < b.keys[i];
+    return false;
+  };
+};
+
+struct UnsqueezeKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + MAX_DIM;
+  UnsqueezeKey(const Tensor& input, const std::vector<int>& axes);
+  int keys[KEY_LENGTH];
+};
+
+struct UnsqueezeCompare {
+  bool operator()(const UnsqueezeKey& a, const UnsqueezeKey& b) const {
+    for (int i = 0; i < UnsqueezeKey::KEY_LENGTH; i++)
+      if (a.keys[i] != b.keys[i])
+        return a.keys[i] < b.keys[i];
+    return false;
+  };
+};
+
 class Model {
 public:
   Model();
@@ -1039,6 +1101,8 @@ public:
   Op get_or_create_enlarge(Tensor _w1, Tensor _w2);
   Op get_or_create_merge_gconv(const Tensor& _weight,
                                int count);
+  Op get_or_create_squeeze(const Tensor& input, const std::vector<int>& axes);
+  Op get_or_create_unsqueeze(const Tensor& input, const std::vector<int>& axes);
   // Special API for creating weight and input operator
   Op create_input(Tensor _input, OpType _type);
   Op create_weight(Tensor _weight, OpType _type);
@@ -1054,6 +1118,8 @@ public:
   void measure_split_cost(Split*);
   void measure_element_cost(Element*);
   void measure_enlarge_cost(Enlarge*);
+  void measure_squeeze_cost(Squeeze*);
+  void measure_unsqueeze_cost(Unsqueeze*);
   void* allocate_memory(size_t size, const DATATYPE* initial_data= NULL);
   bool copy_memory(DATATYPE* dst, const DATATYPE* src, size_t size);
   float measure_oplist_runtime(const std::vector<OpBase*>& list);
@@ -1094,6 +1160,8 @@ public:
   std::map<ElementKey, Element*, ElementCompare> element;
   std::map<EnlargeKey, Enlarge*, EnlargeCompare> enlarge;
   std::map<MergeGConvKey, MergeGConv*, MergeGConvCompare> merge_gconv;
+  std::map<SqueezeKey, Squeeze*, SqueezeCompare> squeeze;
+  std::map<UnsqueezeKey, Unsqueeze*, UnsqueezeCompare> unsqueeze;
   DATATYPE *inputPtr, *biasPtr, *outputPtr, *filterPtr;
   // variables for batch norm
   DATATYPE *scalePtr, *runningMean, *runningVar, *saveMean, *saveVar;

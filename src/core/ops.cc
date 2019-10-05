@@ -131,7 +131,7 @@ OpBase::OpBase(int n, Tensor* _inputs, Model* _model, OpType _type)
   }
 }
 
-bool OpBase::get_parameter(PMParameter para, int* value)
+bool OpBase::get_int_parameter(PMParameter para, int* value)
 {
   switch (para) {
     case PM_OP_TYPE:
@@ -496,7 +496,7 @@ int Graph::get_operator_int_attr(size_t guid, PMParameter attr)
 {
   Op op = find_op_or_fail(guid);
   int ret;
-  assert(op.ptr->get_parameter(attr, &ret));
+  assert(op.ptr->get_int_parameter(attr, &ret));
   return ret;
 }
 

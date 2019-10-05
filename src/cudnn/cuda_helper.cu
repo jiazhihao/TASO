@@ -10,6 +10,15 @@ void assign_kernel(float* ptr, int size, float value)
   }
 }
 
+__global__
+void copy_kernel(float* dst, const float* src, int size)
+{
+  CUDA_KERNEL_LOOP(i, size)
+  {
+    dst[i] = src[i];
+  }
+}
+
 cudnnActivationMode_t get_activation_mode(ActiMode activation)
 {
   switch (activation) {

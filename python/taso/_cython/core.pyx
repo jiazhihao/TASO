@@ -138,6 +138,13 @@ cdef class PyGraph:
         return PyTensor(t)
 
     def dropout(self, PyTensor input, float rate = 0):
+        # We ignore dropout rate for inference
+        cdef TensorHandle handle = self.p_graph.dropout(input.ctensor)
+        t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
+        return PyTensor(t)
+
+    def identity(self, PyTensor input):
+        # We ignore dropout rate for inference
         cdef TensorHandle handle = self.p_graph.dropout(input.ctensor)
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
@@ -199,6 +206,15 @@ cdef class PyGraph:
         for i in range(len(perm)):
             cperm[i] = perm[i]
         cdef TensorHandle handle = self.p_graph.transpose(input.ctensor, cperm, shuffle)
+        t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
+        return PyTensor(t)
+
+    def unsqueeze(self, PyTensor input, tuple axes):
+        cdef vector[int] caxes
+        caxes.resize(len(axes))
+        for i in range(len(axes)):
+            caxes[i] = axes[i]
+        cdef TensorHandle handle = self.p_graph.unsqueeze(input.ctensor, caxes)
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 

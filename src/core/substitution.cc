@@ -504,7 +504,7 @@ bool SrcOp::match(Op op)
   for (size_t i = 0; i < constraints.size(); i++) {
     PMConstraint ooc = constraints[i];
     int actValue = 0;
-    assert(op.ptr->get_parameter(ooc.para, &actValue));
+    assert(op.ptr->get_int_parameter(ooc.para, &actValue));
     switch (ooc.comp) {
       case COMPARE_EQ:
         if (actValue != ooc.value) pass = false;
@@ -750,7 +750,7 @@ bool GraphXfer::can_match(OpX* srcOp, Op op, Graph* graph)
   for (size_t i = 0; i < srcOp->pmConstraints.size(); i++) {
     PMConstraint pmc = srcOp->pmConstraints[i];
     int actValue = 0;
-    assert(op.ptr->get_parameter(pmc.para, &actValue));
+    assert(op.ptr->get_int_parameter(pmc.para, &actValue));
     //printf("pmc[%d] para(%d) comp(%d) value(%d) actValue(%d)\n",
     //       i, pmc.para, pmc.comp, pmc.value, actValue);
     switch (pmc.comp) {

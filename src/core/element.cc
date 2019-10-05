@@ -64,9 +64,9 @@ Element::Element(Model* _model, OpType _type,
 Element::~Element(void)
 {}
 
-bool Element::get_parameter(PMParameter para, int* value)
+bool Element::get_int_parameter(PMParameter para, int* value)
 {
-  return OpBase::get_parameter(para, value);
+  return OpBase::get_int_parameter(para, value);
 }
 
 void Element::collect_costs(float& exe_time, float& flops,

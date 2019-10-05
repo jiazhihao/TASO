@@ -84,9 +84,9 @@ Reshape::Reshape(Model* _model, Tensor _input,
 Reshape::~Reshape(void)
 {}
 
-bool Reshape::get_parameter(PMParameter para, int* value)
+bool Reshape::get_int_parameter(PMParameter para, int* value)
 {
-  return OpBase::get_parameter(para, value);
+  return OpBase::get_int_parameter(para, value);
 }
 
 void Reshape::collect_costs(float& exe_time, float& flops,
