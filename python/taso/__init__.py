@@ -71,6 +71,16 @@ def _dropout(op, graph, tensors, initializer):
     outputs = graph.dropout(inputs[0], rate)
     return outputs
 
+def _gemm(op, graph, tensors, initializer):
+    inputs = _get_inputs(op, tensors)
+    attrs = _parse_attribute(op.attribute)
+    if "transA" in attrs:
+        inputs[0] = graph.transpose(inputs[0], (1,0), shuffle=True)
+    if "transB" in attrs:
+        inputs[1] = graph.transpose(inputs[1], (1,0), shuffle=True)
+    outputs = graph.matmul(inputs[0], inputs[1])
+    return outputs
+
 def _identity(op, graph, tensors, initializer):
     inputs = _get_inputs(op, tensors)
     assert len(inputs) == 1, "Identity takes exactly one input"
@@ -81,6 +91,12 @@ def _matmul(op, graph, tensors, initializer):
     inputs = _get_inputs(op, tensors)
     assert len(inputs) == 2, "Matmul takes exactly two inputs"
     outputs = graph.matmul(inputs[0], inputs[1])
+    return outputs
+
+def _mul(op, graph, tensors, initializer):
+    inputs = _get_inputs(op, tensors)
+    assert len(inputs) == 2, "Mul takes exactly two inputs"
+    outputs = graph.mul(inputs[0], inputs[1])
     return outputs
 
 def _pad(op, graph, tensors, initializer):
@@ -175,12 +191,14 @@ xf_operators['BatchNormalization'] = _batchnorm
 xf_operators['Concat'] = _concat
 xf_operators['Conv'] = _conv2d
 xf_operators['Dropout'] = _dropout
+xf_operators['Gemm'] = _gemm
 xf_operators['Identity'] = _identity
 xf_operators['Pad'] = _pad
 xf_operators['Reshape'] = _reshape
 xf_operators['Relu'] = _relu
 xf_operators['Matmul'] = _matmul
 xf_operators['MaxPool'] = _maxpool2d
+xf_operators['Mul'] = _mul
 xf_operators['AveragePool'] = _avgpool2d
 xf_operators['Split'] = _split
 xf_operators['Transpose'] = _transpose
@@ -209,7 +227,6 @@ def load(filename):
         dims = list()
         for d in t.type.tensor_type.shape.dim:
             dims.append(d.dim_value)
-        print(dims)
         weight_data = None
         for weight in model.graph.initializer:
             if (weight.name == t.name):
@@ -221,7 +238,6 @@ def load(filename):
             tensors[t.name] = graph.new_weight(dims=tuple(dims), data = weight_data)
 
     for op in model.graph.node:
-        print(op.op_type)
         if op.op_type in xf_operators:
             outputs = xf_operators[op.op_type](op, graph, tensors, model.graph.initializer)
             if not isinstance(outputs, list):
@@ -245,6 +261,7 @@ operator_attrs['AveragePool'] = ['kernel_shape', 'pads', 'strides']
 operator_attrs['Concat'] = ['axis']
 operator_attrs['Conv'] = ['group', 'kernel_shape', 'pads', 'strides']
 operator_attrs['Dropout'] = []
+operator_attrs['Gemm'] = []
 operator_attrs['Matmul'] = []
 operator_attrs['MaxPool'] = ['kernel_shape', 'pads', 'strides']
 operator_attrs['Split'] = ['axis', 'split']

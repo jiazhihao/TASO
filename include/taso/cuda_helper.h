@@ -47,6 +47,10 @@ inline int GET_BLOCKS(const int N)
 void helperSetTensorDescriptor(const taso::Tensor& tensor,
                                cudnnTensorDescriptor_t tensorDesc);
 
+void helperSetBroadcastableTensorDescriptor(const taso::Tensor& input,
+                                            const taso::Tensor& output,
+                                            cudnnTensorDescriptor_t tensorDesc);
+
 __global__
 void assign_kernel(float* ptr, int size, float value);
 

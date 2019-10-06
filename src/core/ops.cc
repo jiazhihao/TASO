@@ -295,7 +295,7 @@ Graph* Graph::optimize(float alpha, int budget)
       // TODO: free all remaining candidates when budget exhausted 
       break;
     }
-    if (counter % 10 == 0) {
+    if (counter % 1 == 0) {
       printf("        [%d] cost = %.4lf bestCost = %.4lf candidates.size() = %zu\n", counter, subGraph->total_cost(), bestCost, candidates.size());
       //timer_fs << microsecond_timer() - start_time << ", " << bestCost << std::endl;
     }

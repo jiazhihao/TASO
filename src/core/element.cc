@@ -16,13 +16,30 @@
 #include "taso/ops.h"
 using namespace taso;
 
+bool Model::broadcastable(const Tensor& t1,
+                          const Tensor& t2)
+{
+  int num_dim = min(t1.numDim, t2.numDim);
+  for (int dim = 0; dim < num_dim; dim++) {
+    if ((t1.dim[t1.numDim-1-dim] != 1)
+      &&(t2.dim[t2.numDim-1-dim] != 1)
+      &&(t1.dim[t1.numDim-1-dim] != t2.dim[t2.numDim-1-dim]))
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
 TensorHandle Graph::element(OpType type,
                             const TensorHandle t1,
                             const TensorHandle t2)
 {
-  assert(t1->numDim == t2->numDim);
-  for (int i = 0; i < t1->numDim; i++)
-    assert(t1->dim[i] == t2->dim[i]);
+  if (!model->broadcastable(*t1, *t2)) {
+    fprintf(stderr, "Error: inputs could not be broadcast together");
+    assert(false);
+    return NULL;
+  }
   Op op = model->get_or_create_element(type, *t1, *t2);
   add_edge(t1->op, op, t1->idx, 0);
   add_edge(t2->op, op, t2->idx, 1);
@@ -32,10 +49,14 @@ TensorHandle Graph::element(OpType type,
 }
 
 Op Model::get_or_create_element(OpType type,
-                                Tensor t1, Tensor t2)
+                                const Tensor& t1,
+                                const Tensor& t2)
 {
+  if (!broadcastable(t1, t2)) {
+    return Op::INVALID_OP;
+  }
   // key is (inputN, inputC, inputH, inputW, type)
-  ElementKey key(t1, type);
+  ElementKey key(t1, t2, type);
   Element* eleOp;
   if (element.find(key) != element.end()) {
     eleOp = element[key];
@@ -51,13 +72,29 @@ Op Model::get_or_create_element(OpType type,
 }
 
 Element::Element(Model* _model, OpType _type,
-                 Tensor _t1, Tensor _t2)
+                 const Tensor& _t1,
+                 const Tensor& _t2)
 : OpBase(_t1, _t2, _model, _type)
 {
   numOutputs = 1;
-  outputs[0] = _t1;
-  for (int i = 0; i < outputs[0].numDim; i++)
-    outputs[0].split[i].combine(_t2.split[i]);
+  int num_dim = max(_t1.numDim, _t2.numDim);
+  outputs[0].numDim = num_dim;
+  int total = 1;
+  for (int i = 0; i < num_dim; i++) {
+    int t1_idx = _t1.numDim-1-i;
+    int t2_idx = _t2.numDim-1-i;
+    int out_idx = num_dim-1-i;
+    int dim1 = 1, dim2 = 1;
+    if (t1_idx >= 0)
+      dim1 = _t1.dim[t1_idx];
+    if (t2_idx >= 0)
+      dim2 = _t2.dim[t2_idx];
+    outputs[0].dim[out_idx] = max(dim1, dim2);
+    outputs[0].stride[out_idx] = total;
+    total *= outputs[0].dim[out_idx];
+    outputs[0].split[out_idx] = _t1.split[t1_idx];
+    outputs[0].split[out_idx].combine(_t2.split[t2_idx]);
+  }
   outputs[0].idx = 0;
 }
 
@@ -86,11 +123,14 @@ void Element::collect_costs(float& exe_time, float& flops,
 }
 
 // Key ordering: type, input
-ElementKey::ElementKey(Tensor input, OpType type)
+ElementKey::ElementKey(const Tensor& t1,
+                       const Tensor& t2,
+                       OpType type)
 {
   int idx = 0;
   keys[idx++] = type;
-  input.serialize(keys, idx);
+  t1.serialize(keys, idx);
+  t2.serialize(keys, idx);
   while (idx < KEY_LENGTH)
     keys[idx++] = 0;
   assert(idx == KEY_LENGTH);

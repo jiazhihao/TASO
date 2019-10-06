@@ -311,6 +311,8 @@ cdef class PyGraph:
             return "Weight"
         elif type == OP_EW_ADD:
             return "Add"
+        elif type == OP_BATCHNORM:
+            return "BatchNormalization"
         elif type == OP_EW_MUL:
             return "Mul"
         elif type == OP_CONCAT:

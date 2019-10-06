@@ -746,6 +746,8 @@ bool GraphXfer::map_output(TensorX src, TensorX dst)
 bool GraphXfer::can_match(OpX* srcOp, Op op, Graph* graph)
 {
   if (srcOp->type != op.ptr->type) return false;
+  // check num input tensors
+  if (srcOp->inputs.size() != op.ptr->numInputs) return false;
   // check pmConstraints
   for (size_t i = 0; i < srcOp->pmConstraints.size(); i++) {
     PMConstraint pmc = srcOp->pmConstraints[i];

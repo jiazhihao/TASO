@@ -733,7 +733,7 @@ public:
 
 class Element : public OpBase {
 public:
-  Element(Model* _model, OpType _type, Tensor _t1, Tensor _t2);
+  Element(Model* _model, OpType _type, const Tensor& _t1, const Tensor& _t2);
   ~Element(void);
   bool get_int_parameter(PMParameter para, int*);
   void forward(bool block);
@@ -742,7 +742,7 @@ public:
   void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
 public:
 #ifdef USE_CUDNN
-  cudnnTensorDescriptor_t inputTensor;
+  cudnnTensorDescriptor_t in1Tensor, in2Tensor, outTensor;
   cudnnOpTensorDescriptor_t opDesc;
 #endif
 };
@@ -992,8 +992,8 @@ struct NoopCompare {
 };
 
 struct ElementKey {
-  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 1;
-  ElementKey(Tensor t, OpType type);
+  static const int KEY_LENGTH = 2*Tensor::MAX_KEY_LENGTH + 1;
+  ElementKey(const Tensor& t1, const Tensor& t2, OpType type);
   int keys[KEY_LENGTH];
 };
 
@@ -1097,7 +1097,7 @@ public:
   Op get_or_create_split(Tensor _input, int axis, int n, int* channels);
   Op get_or_create_split(Tensor _input, int axis, int n);
   Op get_or_create_noop(Tensor _input, OpType _type);
-  Op get_or_create_element(OpType type, Tensor t1, Tensor t2);
+  Op get_or_create_element(OpType type, const Tensor& t1, const Tensor& t2);
   Op get_or_create_enlarge(Tensor _w1, Tensor _w2);
   Op get_or_create_merge_gconv(const Tensor& _weight,
                                int count);
@@ -1123,6 +1123,7 @@ public:
   void* allocate_memory(size_t size, const DATATYPE* initial_data= NULL);
   bool copy_memory(DATATYPE* dst, const DATATYPE* src, size_t size);
   float measure_oplist_runtime(const std::vector<OpBase*>& list);
+  bool broadcastable(const Tensor& t1, const Tensor& t2);
 public:
   bool isTraining;
   bool print_cost;
