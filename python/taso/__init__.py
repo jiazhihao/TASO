@@ -251,19 +251,25 @@ def load(filename):
     return graph
 
 input_weight_names = dict()
+input_weight_names['Add'] = ['input1', 'input2']
+input_weight_names['AveragePool'] = ['input']
+input_weight_names['BatchNormalization'] = ['input', 'scale', 'bias', 'mean', 'var']
 input_weight_names['Conv'] = ['input', 'weight', 'bias']
 input_weight_names['Matmul'] = ['input', 'weight']
+input_weight_names['Mul'] = ['input1', 'input2']
 input_weight_names['Reshpe'] = ['input', 'shape']
 
 operator_attrs = dict()
 operator_attrs['Add'] = []
 operator_attrs['AveragePool'] = ['kernel_shape', 'pads', 'strides']
+operator_attrs['BatchNormalization'] = [] # TODO: Add epsilon and momentum
 operator_attrs['Concat'] = ['axis']
 operator_attrs['Conv'] = ['group', 'kernel_shape', 'pads', 'strides']
 operator_attrs['Dropout'] = []
 operator_attrs['Gemm'] = []
 operator_attrs['Matmul'] = []
 operator_attrs['MaxPool'] = ['kernel_shape', 'pads', 'strides']
+operator_attrs['Mul'] = []
 operator_attrs['Split'] = ['axis', 'split']
 operator_attrs['Relu'] = []
 operator_attrs['Reshape'] = []
