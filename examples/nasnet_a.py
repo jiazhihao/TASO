@@ -1,4 +1,5 @@
-import xflow as xf
+import taso as ts
+import onnx
 
 def squeeze(graph, out_channels, input):
     weight = graph.new_weight(dims=(out_channels, input.dim(1), 1, 1))
@@ -72,9 +73,13 @@ def reduction_cell(graph, prev, cur, out_channels):
     outputs.append(graph.add(ts[8], ts[9]))
     return graph.concat(1, outputs)
 
-graph = xf.new_graph()
-input = graph.new_input(dims = (1, 128, 56, 56))
-input = graph.maxpool2d(input=input, kernels=(1,1), strides=(1,1), padding="SAME")
+graph = ts.new_graph()
+input = graph.new_input(dims=(1,3,224,224))
+weight = graph.new_weight(dims=(64,3,7,7))
+input = graph.conv2d(input=input, weight=weight, strides=(2,2),
+                 padding="SAME", activation="RELU")
+input = graph.maxpool2d(input=input, kernels=(3,3), strides=(2,2), padding="SAME")
+
 out_channels = 128
 for i in range(3):
     prev = input
@@ -85,7 +90,7 @@ for i in range(3):
         cur = t
     out_channels *= 2
     input = reduction_cell(graph, prev, cur, out_channels)
-new_graph = xf.optimize(graph, alpha=1.0, budget=100)
-#onnx_model = xf.export_onnx(new_graph)
-#onnx.checker.check_model(onnx_model)
-#onnx.save(onnx_model, "nasneta_xflow.onnx")
+new_graph = ts.optimize(graph, alpha=1.0, budget=100)
+onnx_model = ts.export_onnx(new_graph)
+onnx.checker.check_model(onnx_model)
+onnx.save(onnx_model, "nasneta_taso.onnx")

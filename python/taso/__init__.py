@@ -314,7 +314,7 @@ def export_onnx(graph):
     for op in opList:
         mytype = graph.get_operator_type(op)
         inedges = graph.get_input_edges(op)
-        print("op.guid={} mytype={} inedges={}".format(op['guid'], mytype, len(inedges)))
+        #print("op.guid={} mytype={} inedges={}".format(op['guid'], mytype, len(inedges)))
         inputs = list()
         for e in inedges:
             intype = graph.get_operator_type(e['srcOp'])

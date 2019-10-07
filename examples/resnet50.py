@@ -1,4 +1,4 @@
-import xflow as xf
+import taso as ts
 
 def resnet_block(graph, input, strides, out_channels):
     w1 = graph.new_weight(dims=(out_channels,input.dim(1),1,1))
@@ -19,7 +19,7 @@ def resnet_block(graph, input, strides, out_channels):
                            activation="RELU")
     return graph.relu(graph.add(input, t))
 
-graph = xf.new_graph()
+graph = ts.new_graph()
 input = graph.new_input(dims=(1,64,56,56))
 t = input
 for i in range(3):
@@ -37,6 +37,6 @@ for i in range(3):
     t = resnet_block(graph, t, strides, 512)
     strides = (1,1)
 
-new_graph = xf.optimize(graph, alpha=1.0, budget=1000)
-#onnx_model = xf.export_onnx(new_graph)
+new_graph = ts.optimize(graph, alpha=1.0, budget=1000)
+#onnx_model = ts.export_onnx(new_graph)
 
