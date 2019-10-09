@@ -22,7 +22,7 @@ git clone https://www.github.com/jiazhihao/taso
 cd taso
 ```
 
-* Build the TASO runtime library. The configuration of the TASO runtime can be modified by `config.cmake`. The default configuration only builds the CUDA backend, and you can change `set(USE_MKL OFF)` to `set(USE_MKL ON` to enable the MKL CPU backend.
+* Build the TASO runtime library. The configuration of the TASO runtime can be modified by `config.cmake`. The default configuration builds the CUDA backend and automatically finds the CUDA libraries (e.g., cuDNN, cuBLAS). You can manually choose a CUDA path by changing `set(USE_CUDA ON)` to `set(USE_CUDA /path/to/cuda/library`). MKL support is coming soon.
 ```
 mkdir build; cd build; cmake ..
 sudo make install -j 4
@@ -38,8 +38,8 @@ python setup.py install
 
 ### Optimize Pre-trained ONNX Graphs
 
-TASO can be used to optimize pre-trained DNN models in the [ONNX](https://onnx.ai/) format. The following code snippet shows how to load a pre-trained DNN model, optimize the model, and save the optimized model to a ONNX file. The optimized model can be directly used by existing deep learning frameworks to achieve optimized performance.
-
+TASO can be used to optimize pre-trained DNN models in the [ONNX](https://onnx.ai/) format, and this can be done in a few lines of Python.
+The following code snippet shows how to load a pre-trained DNN model, optimize the model, and save the optimized model into a ONNX file.
 ```python
 import taso
 import onnx
@@ -49,6 +49,11 @@ taso_graph = taso.optimize(old_model)
 new_model = taso.export_onnx(taso_graph)
 onnx.save(new_model, "/path/to/save/new/onnx/model")
 ```
+The optimized model has the same accuracy (i.e., mathematically equivalent) as the original one, and can be directly used by existing deep learning frameworks.
+The following figure shows end-to-end inference performance comparison among existing frameworks and TASO on a NVIDIA V100 GPU.
+<div align="center">
+  <img src="https://github.com/jiazhihao/TASO/blob/master/figures/inference.png">
+</div>
 
 ### Build DNN Architectures from Scratch
 
