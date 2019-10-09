@@ -50,14 +50,15 @@ new_model = taso.export_onnx(taso_graph)
 onnx.save(new_model, "/path/to/save/new/onnx/model")
 ```
 The optimized model has the same accuracy (i.e., mathematically equivalent) as the original one, and can be directly used by existing deep learning frameworks.
-The following figure shows end-to-end inference performance comparison among existing frameworks and TASO on a NVIDIA V100 GPU.
+The following figure shows the end-to-end inference performance comparison on a NVIDIA V100 GPU.
+The original and TASO-optimized ONNX files are available in the `onnx` folder.
 <div align="center">
   <img src="https://github.com/jiazhihao/TASO/blob/master/figures/inference.png">
 </div>
 
 ### Build DNN Architectures from Scratch
 
-The following code snippet shows how to build the left-most DNN graph depicted in the figure. TASO automatically performs a series of non-trivial transformations, and eventually discovers the right-most DNN graph, which is 1.3x faster on a V100 GPU. More example DNN architectures are available in the `examples` subfolder.
+The following code snippet shows how to build the left-most DNN graph depicted in the figure. TASO automatically performs a series of non-trivial transformations, and eventually discovers the right-most DNN graph, which is 1.3x faster on a V100 GPU. More example DNN architectures are available in the `examples` folder.
 
 <div align="center">
   <img src="https://github.com/jiazhihao/TASO/blob/master/figures/graph_subst.png">
