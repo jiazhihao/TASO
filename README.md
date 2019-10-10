@@ -36,15 +36,15 @@ python setup.py install
 
 ## Use TASO to Optimize DNN Computation
 
-### Optimize Pre-trained ONNX Graphs
+### Optimize Pre-trained ONNX Models
 
-TASO can be used to optimize pre-trained DNN models in the [ONNX](https://onnx.ai/) format, and this can be done in a few lines of Python.
-The following code snippet shows how to load a pre-trained DNN model, optimize the model, and save the optimized model into a ONNX file.
+TASO can be used to optimize pre-trained DNN models in the [ONNX](https://onnx.ai/) format, and this can be done in just a few lines of Python code.
+The following code snippet shows how to load a pre-trained DNN model from ONNX, optimize the model, and save the optimized model into a ONNX file.
 ```python
 import taso
 import onnx
 
-old_model = taso.load("/path/to/load/onnx/model")
+old_model = taso.load_onnx("/path/to/load/onnx/model")
 taso_graph = taso.optimize(old_model)
 new_model = taso.export_onnx(taso_graph)
 onnx.save(new_model, "/path/to/save/new/onnx/model")
@@ -56,9 +56,10 @@ The original and TASO-optimized ONNX files are available in the `onnx` folder.
   <img src="https://github.com/jiazhihao/TASO/blob/master/figures/inference.png">
 </div>
 
-### Build DNN Architectures from Scratch
+### Optimizing DNN Models using the Python Interface
 
-The following code snippet shows how to build the left-most DNN graph depicted in the figure. TASO automatically performs a series of non-trivial transformations, and eventually discovers the right-most DNN graph, which is 1.3x faster on a V100 GPU. More example DNN architectures are available in the `examples` folder.
+TASO can also be used to optimize arbitrary DNN models using the Python interface. 
+The following code snippet shows how to build the left-most DNN graph depicted in the figure. TASO automatically performs a series of non-trivial transformations, and eventually discovers the right-most DNN graph, which is 1.3x faster on a V100 GPU. More DNN examples are available in the `examples` folder.
 
 <div align="center">
   <img src="https://github.com/jiazhihao/TASO/blob/master/figures/graph_subst.png">
