@@ -19,7 +19,7 @@ using namespace taso;
 
 void ElementWiseUnary::map(void)
 {
-  checkCUDA(cudaMalloc(&outputs[0].data_ptr, outputs[0].volume() * sizeof(DATATYPE));
+  checkCUDA(cudaMalloc(&outputs[0].data_ptr, outputs[0].volume() * sizeof(DATATYPE)));
 }
 
 void ElementWiseUnary::unmap(void)
@@ -40,4 +40,3 @@ void Model::measure_elementwise_unary_cost(ElementWiseUnary* unary)
     printf("  measure[ElementWiseUnary]: type(%d) cost(%.4lf)\n",
            unary->type, unary->runtime);
 }
-

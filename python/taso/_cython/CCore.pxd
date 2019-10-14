@@ -51,6 +51,30 @@ cdef extern from "taso/ops.h" namespace "taso":
         OP_CONSTANT_POOL,
         OP_SQUEEZE,
         OP_UNSQUEEZE,
+        OP_EW_SUB,
+        OP_EW_DIV,
+        OP_EW_EQUAL,
+        OP_EW_GREATER,
+        OP_EW_LESS,
+        OP_REDUCE_ARGMAX,
+        OP_REDUCE_ARGMIN,
+        OP_REDUCE_MAX,
+        OP_REDUCE_MEAN,
+        OP_REDUCE_MIN,
+        OP_REDUCE_PROD,
+        OP_REDUCE_SUM,
+        OP_PAD,
+        OP_SHAPE,
+        OP_SIZE,
+        OP_TOPK,
+        OP_WHERE,
+        OP_CEIL,
+        OP_CAST,
+        OP_EXP,
+        OP_ROUND,
+        OP_LOG,
+        OP_LOGICAL_NOT,
+        OP_SQRT,
 
     # This must be consistent with include/taso/ops.h
     cdef enum PMParameter:
@@ -131,6 +155,7 @@ cdef extern from "taso/ops.h" namespace "taso":
                                const TensorHandle bias,
                                const TensorHandle mean,
                                const TensorHandle var)
+        TensorHandle ceil(const TensorHandle input)
         TensorHandle concat(int axis, int n,
                             const TensorHandle* inputs)
         TensorHandle conv2d(const TensorHandle input,
@@ -142,6 +167,9 @@ cdef extern from "taso/ops.h" namespace "taso":
         TensorHandle element(OpType type,
                              const TensorHandle x,
                              const TensorHandle y)
+        TensorHandle exp(const TensorHandle input)
+        TensorHandle log(const TensorHandle input)
+        TensorHandle logical_not(const TensorHandle input)
         TensorHandle pool2d_max(const TensorHandle input,
                                 int kernelH, int kernelW,
                                 int strideH, int strideW,
@@ -155,12 +183,35 @@ cdef extern from "taso/ops.h" namespace "taso":
         TensorHandle matmul(const TensorHandle input,
                             const TensorHandle weight,
                             ActiMode activation)
+        TensorHandle reduce_argmax(const TensorHandle input,
+                                   const vector[int] axes,
+                                   bool keepdims)
+        TensorHandle reduce_argmin(const TensorHandle input,
+                                   const vector[int] axes,
+                                   bool keepdims)
+        TensorHandle reduce_max(const TensorHandle input,
+                                const vector[int] axes,
+                                bool keepdims)
+        TensorHandle reduce_mean(const TensorHandle input,
+                                 const vector[int] axes,
+                                 bool keepdims)
+        TensorHandle reduce_min(const TensorHandle input,
+                                const vector[int] axes,
+                                bool keepdims)
+        TensorHandle reduce_prod(const TensorHandle input,
+                                 const vector[int] axes,
+                                 bool keepdims)
+        TensorHandle reduce_sum(const TensorHandle input,
+                                const vector[int] axes,
+                                bool keepdims)
         TensorHandle reshape(const TensorHandle input,
                              const vector[int] shape)
         TensorHandle relu(const TensorHandle input,
                           bool _inplace)
+        TensorHandle round(const TensorHandle input)
         TensorHandle sigmoid(const TensorHandle input,
                             bool _inplace)
+        TensorHandle sqrt(const TensorHandle input)
         TensorHandle tanh(const TensorHandle input,
                           bool _inplace)
         TensorHandle transpose(const TensorHandle input,

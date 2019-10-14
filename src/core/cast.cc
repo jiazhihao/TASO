@@ -18,7 +18,7 @@ using namespace taso;
 
 TensorHandle Graph::cast(const TensorHandle _input, DataType _datatype)
 {
-  Op op = model->get_or_create_cast(*input, _datatype);
+  Op op = model->get_or_create_cast(*_input, _datatype);
   assert(op != Op::INVALID_OP);
   add_edge(_input->op, op, _input->idx, 0);
   TensorHandle t = new Tensor(op.ptr->outputs[0]);
@@ -44,7 +44,7 @@ Op Model::get_or_create_cast(const Tensor& _input, DataType _datatype)
 }
 
 Cast::Cast(Model* _model, const Tensor& _input, DataType _datatype)
-: OpBase(_input, _model, OP_CAST);
+: OpBase(_input, _model, OP_CAST)
 {
   numOutputs = 1;
   outputs[0] = _input;

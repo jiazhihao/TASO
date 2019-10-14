@@ -17,27 +17,27 @@
 #include "taso/cuda_helper.h"
 using namespace taso;
 
-void Cast::map(void)
+void TopK::map(void)
 {
+  // TODO: use cudnn reduce tensor
   checkCUDA(cudaMalloc(&outputs[0].data_ptr, outputs[0].volume() * sizeof(DATATYPE)));
+  checkCUDA(cudaMalloc(&outputs[1].data_ptr, outputs[1].volume() * sizeof(DATATYPE)));
 }
 
-void Cast::unmap(void)
+void TopK::unmap(void)
 {
   checkCUDA(cudaFree(outputs[0].data_ptr));
+  checkCUDA(cudaFree(outputs[1].data_ptr));
 }
 
-void Cast::forward(bool block)
+void TopK::forward(bool block)
 {
   if (block)
     checkCUDA(cudaDeviceSynchronize());
 }
 
-void Model::measure_cast_cost(Cast* cast)
+void Model::measure_topk_cost(TopK* topk)
 {
-  cast->runtime = 0;
-  if (print_cost)
-    printf("  measure[Cast]: type(%d) cost(%.4lf)\n",
-           cast->type, cast->runtime);
+  // TODO: use cudnn reduce tensor
+  topk->runtime = 0;
 }
-

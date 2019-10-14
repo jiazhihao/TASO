@@ -480,6 +480,7 @@ public:
                          const TensorHandle _bias,
                          const TensorHandle _mean,
                          const TensorHandle _var);
+  TensorHandle cast(const TensorHandle _input, DataType _datatype);
   TensorHandle ceil(const TensorHandle _input);
   TensorHandle concat(int axis, int n, const TensorHandle* _inputs);
   TensorHandle constant(int ndim, int* dims, OpType _type);
@@ -498,6 +499,7 @@ public:
   TensorHandle element(OpType type,
                        const TensorHandle _t1,
                        const TensorHandle _t2);
+  TensorHandle elementwise_unary(const TensorHandle _input, OpType _type);
   TensorHandle enlarge(const TensorHandle _w1, const TensorHandle _w2);
   TensorHandle exp(const TensorHandle _input);
   TensorHandle fc(const TensorHandle _input,
@@ -554,6 +556,7 @@ public:
                     bool _inPlace = true);
   TensorHandle reshape(const TensorHandle _input,
                        const std::vector<int>& shape);
+  TensorHandle round(const TensorHandle _input);
   TensorHandle shape(const TensorHandle _input,
                      OpType _type);
   TensorHandle sigmoid(const TensorHandle _input,
@@ -756,6 +759,17 @@ public:
   //DATATYPE *biasPtr, *scalePtr, *runningMean, *runningVar, *saveMean, *saveVar;
 };
 
+class Cast : public OpBase {
+public:
+  Cast(Model* _model, const Tensor& _input, DataType _datatype);
+  ~Cast(void);
+  bool get_int_parameter(PMParameter para, int*);
+  void forward(bool block);
+  void map(void);
+  void unmap(void);
+  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
+};
+
 class Concat : public OpBase {
 public:
   Concat(Model* _model, int _axis, int _n, Tensor* _inputs, bool* _needCopy);
@@ -784,6 +798,17 @@ public:
   cudnnTensorDescriptor_t in1Tensor, in2Tensor, outTensor;
   cudnnOpTensorDescriptor_t opDesc;
 #endif
+};
+
+class ElementWiseUnary : public OpBase {
+public:
+  ElementWiseUnary(Model* _model, const Tensor& _input, OpType _type);
+  ~ElementWiseUnary(void);
+  bool get_int_parameter(PMParameter para, int*);
+  void forward(bool block);
+  void map(void);
+  void unmap(void);
+  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
 };
 
 class Enlarge : public OpBase {
@@ -989,6 +1014,21 @@ struct BatchNormCompare {
   };
 };
 
+struct CastKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 1;
+  CastKey(const Tensor& _input, DataType _datatype);
+  int keys[KEY_LENGTH];
+};
+
+struct CastCompare {
+  bool operator()(const CastKey& a, const CastKey& b) const {
+    for (int i = 0; i < CastKey::KEY_LENGTH; i++)
+      if (a.keys[i] != b.keys[i])
+        return a.keys[i] < b.keys[i];
+    return false;
+  };
+};
+
 struct ConcatKey {
   static const int KEY_LENGTH = MAX_NUM_INPUTS * Tensor::MAX_KEY_LENGTH + 3;
   ConcatKey(int, int, Tensor*, bool*);
@@ -1053,6 +1093,21 @@ struct ElementCompare {
   };
 };
 
+struct ElementWiseUnaryKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 1;
+  ElementWiseUnaryKey(const Tensor& _input, OpType _type);
+  int keys[KEY_LENGTH];
+};
+
+struct ElementWiseUnaryCompare {
+  bool operator()(const ElementWiseUnaryKey& a, const ElementWiseUnaryKey& b) const {
+    for (int i = 0; i < ElementWiseUnaryKey::KEY_LENGTH; i++)
+      if (a.keys[i] != b.keys[i])
+        return a.keys[i] < b.keys[i];
+    return false;
+  };
+};
+
 struct EnlargeKey {
   static const int KEY_LENGTH = 2 * Tensor::MAX_KEY_LENGTH;
   EnlargeKey(Tensor w1, Tensor w2);
@@ -1067,7 +1122,6 @@ struct EnlargeCompare {
     return false;
   };
 };
-
 
 struct TopKKey {
   static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 4;
@@ -1311,6 +1365,7 @@ public:
                               bool _inPlace);
   Op get_or_create_batchnorm(Tensor _input, Tensor _scale, Tensor _bias,
                              Tensor _mean, Tensor _var);
+  Op get_or_create_cast(const Tensor& _input, DataType _datatype);
   Op get_or_create_concat(int axis, int n, Tensor* _inputs, bool* _needCopy);
   Op get_or_create_constant(int ndim, int* dims, OpType type);
   Op get_or_create_conv2d(Tensor _input, Tensor _weight,
@@ -1318,6 +1373,7 @@ public:
                           PaddingMode _padding,
                           ActiMode _activation);
   Op get_or_create_element(OpType type, const Tensor& t1, const Tensor& t2);
+  Op get_or_create_elementwise_unary(const Tensor& _input, OpType _type);
   Op get_or_create_enlarge(Tensor _w1, Tensor _w2);
   Op get_or_create_matmul(Tensor _input, Tensor _weight,
                           ActiMode _actimode);
@@ -1365,10 +1421,12 @@ public:
   void measure_reshape_cost(Reshape*);
   void measure_activation_cost(Activation*);
   void measure_batchnorm_cost(BatchNorm*);
+  void measure_cast_cost(Cast*);
   void measure_concat_cost(Concat*);
   void measure_shape_cost(Shape*);
   void measure_split_cost(Split*);
   void measure_element_cost(Element*);
+  void measure_elementwise_unary_cost(ElementWiseUnary*);
   void measure_enlarge_cost(Enlarge*);
   void measure_squeeze_cost(Squeeze*);
   void measure_unsqueeze_cost(Unsqueeze*);
@@ -1401,10 +1459,12 @@ public:
 #endif
   std::map<ActivationKey, Activation*, ActivationCompare> activation;
   std::map<BatchNormKey, BatchNorm*, BatchNormCompare> batchnorm;
+  std::map<CastKey, Cast*, CastCompare> cast;
   std::map<ConcatKey, Concat*, ConcatCompare> concat;
   std::map<ConstantKey, Constant*, ConstantCompare> constant;
   std::map<Conv2DKey, Conv2D*, Conv2DCompare> conv2d;
   std::map<ElementKey, Element*, ElementCompare> element;
+  std::map<ElementWiseUnaryKey, ElementWiseUnary*, ElementWiseUnaryCompare> element_unary;
   std::map<EnlargeKey, Enlarge*, EnlargeCompare> enlarge;
   std::map<MatmulKey, Matmul*, MatmulCompare> matmul;
   std::map<MergeGConvKey, MergeGConv*, MergeGConvCompare> merge_gconv;
