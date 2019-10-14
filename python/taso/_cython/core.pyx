@@ -31,6 +31,24 @@ def get_padding_mode(padding):
     else:
         assert(False)
 
+def get_data_type(datatype):
+    if datatype == "FLOAT":
+        return DT_FLOAT
+    elif datatype == "DOUBLE":
+        return DT_DOUBLE
+    elif datatype == "FLOAT16":
+        return DT_HALF
+    elif datatype == "INT8":
+        return DT_INT8
+    elif datatype == "UINT8":
+        return DT_UINT8
+    elif datatype == "INT32":
+        return DT_INT32
+    elif datatype == "INT64":
+        return DT_INT64
+    elif datatype == "BOOL":
+        return DT_BOOL
+
 def get_activation_mode(activation):
     if (activation == "NONE"):
         return AC_MODE_NONE
@@ -116,6 +134,12 @@ cdef class PyGraph:
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
+    def cast(self, *, PyTensor input, datatype):
+        datatype = get_data_type(datatype)
+        cdef TensorHandle handle = self.p_graph.cast(input.ctensor, datatype)
+        t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
+        return PyTensor(t)    
+
     def ceil(self, *, PyTensor input):
         cdef TensorHandle handle = self.p_graph.ceil(input.ctensor)
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
@@ -142,9 +166,19 @@ cdef class PyGraph:
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
+    def div(self, *, PyTensor x, PyTensor y):
+        cdef TensorHandle handle = self.p_graph.element(OP_EW_DIV, x.ctensor, y.ctensor)
+        t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
+        return PyTensor(t)
+
     def dropout(self, PyTensor input, float rate = 0):
         # We ignore dropout rate for inference
         cdef TensorHandle handle = self.p_graph.dropout(input.ctensor)
+        t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
+        return PyTensor(t)
+
+    def equal(self, *, PyTensor x, PyTensor y):
+        cdef TensorHandle handle = self.p_graph.element(OP_EW_EQUAL, x.ctensor, y.ctensor)
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
@@ -153,9 +187,19 @@ cdef class PyGraph:
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
+    def greater(self, *, PyTensor x, PyTensor y):
+        cdef TensorHandle handle = self.p_graph.element(OP_EW_GREATER, x.ctensor, y.ctensor)
+        t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
+        return PyTensor(t)
+
     def identity(self, PyTensor input):
         # We ignore dropout rate for inference
         cdef TensorHandle handle = self.p_graph.dropout(input.ctensor)
+        t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
+        return PyTensor(t)
+
+    def less(self, *, PyTensor x, PyTensor y):
+        cdef TensorHandle handle = self.p_graph.element(OP_EW_LESS, x.ctensor, y.ctensor)
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
@@ -176,8 +220,18 @@ cdef class PyGraph:
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
+    def max(self, *, PyTensor x, PyTensor y):
+        cdef TensorHandle handle = self.p_graph.element(OP_EW_MAX, x.ctensor, y.ctensor)
+        t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
+        return PyTensor(t)
+
+    def min(self, *, PyTensor x, PyTensor y):
+        cdef TensorHandle handle = self.p_graph.element(OP_EW_MIN, x.ctensor, y.ctensor)
+        t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
+        return PyTensor(t)
+
     # element-wise multiplication
-    def mul(self, PyTensor x, PyTensor y):
+    def mul(self, *, PyTensor x, PyTensor y):
         cdef TensorHandle handle = self.p_graph.element(OP_EW_MUL, x.ctensor, y.ctensor)
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
@@ -278,13 +332,28 @@ cdef class PyGraph:
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
+    def shape(self, *, PyTensor input):
+        cdef TensorHandle handle = self.p_graph.shape(input.ctensor, OP_SHAPE)
+        t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
+        return PyTensor(t)
+
     def sigmoid(self, PyTensor input, bool inplace = False):
         cdef TensorHandle handle = self.p_graph.sigmoid(input.ctensor, inplace)
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
+    def size(self, *, PyTensor input):
+        cdef TensorHandle handle = self.p_graph.shape(input.ctensor, OP_SIZE)
+        t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
+        return PyTensor(t)
+
     def sqrt(self, *, PyTensor input):
         cdef TensorHandle handle = self.p_graph.sqrt(input.ctensor)
+        t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
+        return PyTensor(t)
+
+    def sub(self, *, PyTensor x, PyTensor y):
+        cdef TensorHandle handle = self.p_graph.element(OP_EW_SUB, x.ctensor, y.ctensor)
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 

@@ -297,9 +297,8 @@ enum DataType {
   DT_INT8 = 444,
   DT_UINT8 = 555,
   DT_INT32 = 666,
-  DT_UINT32 = 777,
-  DT_INT64 = 888,
-  DT_UINT64 = 999,
+  DT_INT64 = 777,
+  DT_BOOL = 888,
 };
 
 //This must be consistent with python/taso/_cython/CCore.pxd
@@ -381,6 +380,8 @@ enum OpType {
   OP_EW_EQUAL, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Equal
   OP_EW_GREATER, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Greater
   OP_EW_LESS, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Less
+  OP_EW_MAX, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Max
+  OP_EW_MIN, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Min
   OP_REDUCE_ARGMAX, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ArgMax
   OP_REDUCE_ARGMIN, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ArgMin
   OP_REDUCE_MAX, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ReduceMax

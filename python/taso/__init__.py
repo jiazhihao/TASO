@@ -63,8 +63,8 @@ def _cast(op, graph, tensors, initializer):
     assert len(op.input) == 1, "Cast requires exactly one input"
     assert op.input[0] in tensors
     attrs = _parse_attribute(op.attribute)
-    assert False, "To be implemented"
-    outputs = graph.cast(tensors[op.input[0]])
+    to_type = onnx_datatype_tostring(attrs["to"])
+    outputs = graph.cast(input=tensors[op.input[0]], datatype=to_type)
     return outputs
 
 def _ceil(op, graph, tensors, initializer):
@@ -98,12 +98,24 @@ def _conv2d(op, graph, tensors, initializer):
     outputs = graph.conv2d(input=inputs[0], weight=inputs[1], strides=strides, padding=pads)
     return outputs
 
+def _div(op, graph, tensors, initializer):
+    inputs = _get_inputs(op, tensors)
+    assert len(inputs) == 2, "Div takes exactly two inputs"
+    outputs = graph.div(inputs[0], inputs[1])
+    return outputs
+
 def _dropout(op, graph, tensors, initializer):
     inputs = _get_inputs(op, tensors)
     assert len(inputs) == 1, "Dropout takes exactly one input"
     attrs = _parse_attribute(op.attribute)
     rate = attrs["ratio"]
     outputs = graph.dropout(inputs[0], rate)
+    return outputs
+
+def _equal(op, graph, tensors, initializer):
+    inputs = _get_inputs(op, tensors)
+    assert len(inputs) == 2, "Equal takes exactly two inputs"
+    outputs = graph.equal(inputs[0], inputs[1])
     return outputs
 
 def _exp(op, graph, tensors, initializer):
@@ -123,10 +135,22 @@ def _gemm(op, graph, tensors, initializer):
     outputs = graph.matmul(inputs[0], inputs[1])
     return outputs
 
+def _greater(op, graph, tensors, initializer):
+    inputs = _get_inputs(op, tensors)
+    assert len(inputs) == 2, "Greater takes exactly two inputs"
+    outputs = graph.greater(inputs[0], inputs[1])
+    return outputs
+
 def _identity(op, graph, tensors, initializer):
     inputs = _get_inputs(op, tensors)
     assert len(inputs) == 1, "Identity takes exactly one input"
     outputs = graph.dropout(inputs[0], 0.0)
+    return outputs
+
+def _less(op, graph, tensors, initializer):
+    inputs = _get_inputs(op, tensors)
+    assert len(inputs) == 2, "Less takes exactly two inputs"
+    outputs = graph.less(inputs[0], inputs[1])
     return outputs
 
 def _log(op, graph, tensors, initializer):
@@ -149,6 +173,12 @@ def _matmul(op, graph, tensors, initializer):
     outputs = graph.matmul(inputs[0], inputs[1])
     return outputs
 
+def _min(op, graph, tensors, initializer):
+    inputs = _get_inputs(op, tensors)
+    assert len(inputs) == 2, "Min takes exactly two inputs"
+    outputs = graph.min(inputs[0], inputs[1])
+    return outputs
+
 def _mul(op, graph, tensors, initializer):
     inputs = _get_inputs(op, tensors)
     assert len(inputs) == 2, "Mul takes exactly two inputs"
@@ -161,6 +191,12 @@ def _pad(op, graph, tensors, initializer):
     # Currently treat pad as a no op
     assert sum(attrs['pads']) == 0
     return inputs
+
+def _max(op, graph, tensors, initializer):
+    inputs = _get_inputs(op, tensors)
+    assert len(inputs) == 2, "Max takes exactly two inputs"
+    outputs = graph.max(inputs[0], inputs[1])
+    return outputs
 
 def _maxpool2d(op, graph, tensors, initializer):
     assert len(op.input) == 1, "MaxPool2D requires exactly one input"
@@ -273,6 +309,20 @@ def _round(op, graph, tensors, initializer):
     outputs = graph.round(tensors[op.input[0]])
     return outputs
 
+def _shape(op, graph, tensors, initializer):
+    assert len(op.input) == 1, "Shape requires exactly one input"
+    assert op.input[0] in tensors
+    attrs = _parse_attribute(op.attribute)
+    outputs = graph.shape(tensors[op.input[0]])
+    return outputs
+
+def _size(op, graph, tensors, initializer):
+    assert len(op.input) == 1, "Size requires exactly one input"
+    assert op.input[0] in tensors
+    attrs = _parse_attribute(op.attribute)
+    outputs = graph.size(tensors[op.input[0]])
+    return outputs
+
 def _split(op, graph, tensors, initializer):
     assert len(op.input) == 1, "Split requires exactly one input"
     assert op.input[0] in tensors
@@ -290,6 +340,12 @@ def _sqrt(op, graph, tensors, initializer):
     assert op.input[0] in tensors
     attrs = _parse_attribute(op.attribute)
     outputs = graph.sqrt(tensors[op.input[0]])
+    return outputs
+
+def _sub(op, graph, tensors, initializer):
+    inputs = _get_inputs(op, tensors)
+    assert len(inputs) == 2, "Mul takes exactly two inputs"
+    outputs = graph.sub(inputs[0], inputs[1])
     return outputs
 
 def _transpose(op, graph, tensors, initializer):
@@ -324,10 +380,14 @@ xf_operators['Cast'] = _cast
 xf_operators['Ceil'] = _ceil
 xf_operators['Concat'] = _concat
 xf_operators['Conv'] = _conv2d
+xf_operators['Div'] = _div
 xf_operators['Dropout'] = _dropout
+xf_operators['Equal'] = _equal
 xf_operators['Exp'] = _exp
 xf_operators['Gemm'] = _gemm
+xf_operators['Greater'] = _greater
 xf_operators['Identity'] = _identity
+xf_operators['Less'] = _less
 xf_operators['Log'] = _log
 xf_operators['Pad'] = _pad
 xf_operators['ReduceMax'] = _reducemax
@@ -339,12 +399,17 @@ xf_operators['Reshape'] = _reshape
 xf_operators['Relu'] = _relu
 xf_operators['Round'] = _round
 xf_operators['Matmul'] = _matmul
+xf_operators['Max'] = _max
 xf_operators['MaxPool'] = _maxpool2d
+xf_operators['Min'] = _min
 xf_operators['Mul'] = _mul
 xf_operators['Not'] = _logical_not
 xf_operators['AveragePool'] = _avgpool2d
+xf_operators['Shape'] = _shape
+xf_operators['Size'] = _size
 xf_operators['Split'] = _split
 xf_operators['Sqrt'] = _sqrt
+xf_operators['Sub'] = _sub
 xf_operators['Transpose'] = _transpose
 xf_operators['Unsqueeze'] = _unsqueeze
 

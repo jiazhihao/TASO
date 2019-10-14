@@ -21,6 +21,17 @@ from libcpp cimport bool
 
 cdef extern from "taso/ops.h" namespace "taso":
     # This must be consistent with include/taso/ops.h
+    cdef enum DataType:
+        DT_FLOAT  = 111,
+        DT_DOUBLE = 222,
+        DT_HALF   = 333,
+        DT_INT8   = 444,
+        DT_UINT8  = 555,
+        DT_INT32  = 666,
+        DT_INT64  = 777,
+        DT_BOOL   = 888,
+
+    # This must be consistent with include/taso/ops.h
     cdef enum OpType:
         OP_INPUT
         OP_WEIGHT
@@ -56,6 +67,8 @@ cdef extern from "taso/ops.h" namespace "taso":
         OP_EW_EQUAL,
         OP_EW_GREATER,
         OP_EW_LESS,
+        OP_EW_MAX,
+        OP_EW_MIN,
         OP_REDUCE_ARGMAX,
         OP_REDUCE_ARGMIN,
         OP_REDUCE_MAX,
@@ -155,6 +168,7 @@ cdef extern from "taso/ops.h" namespace "taso":
                                const TensorHandle bias,
                                const TensorHandle mean,
                                const TensorHandle var)
+        TensorHandle cast(const TensorHandle input, DataType datatype)
         TensorHandle ceil(const TensorHandle input)
         TensorHandle concat(int axis, int n,
                             const TensorHandle* inputs)
@@ -209,6 +223,7 @@ cdef extern from "taso/ops.h" namespace "taso":
         TensorHandle relu(const TensorHandle input,
                           bool _inplace)
         TensorHandle round(const TensorHandle input)
+        TensorHandle shape(const TensorHandle input, OpType type)
         TensorHandle sigmoid(const TensorHandle input,
                             bool _inplace)
         TensorHandle sqrt(const TensorHandle input)
