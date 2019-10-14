@@ -39,7 +39,7 @@ Op Model::get_or_create_shape(const Tensor& _input,
     measure_shape_cost(shapeOp);
     shape[key] = shapeOp;
   }
-  Op = ret;
+  Op ret;
   ret.guid = global_unique_id ++;
   ret.ptr = shapeOp;
   return ret;

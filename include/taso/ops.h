@@ -269,6 +269,15 @@ struct Tensor {
     }
     return true;
   }
+  bool default_layout(void) const
+  {
+    int cnt = 1;
+    for (int i = numDim-1; i >= 0; i--) {
+      if (stride[i] != cnt) return false;
+      cnt *= dim[i];
+    }
+    return true;
+  }
   //bool operator==(const Tensor& b);
   int numDim, dim[MAX_DIM], stride[MAX_DIM];
   int idx; // idx is used for Ops with multiple outputs (e.g., split)
@@ -280,6 +289,18 @@ struct Tensor {
 
 //typedef shared_ptr<Tensor> TensorHandle;
 typedef Tensor* TensorHandle;
+
+enum DataType {
+  DT_FLOAT = 111,
+  DT_DOUBLE = 222,
+  DT_HALF = 333,
+  DT_INT8 = 444,
+  DT_UINT8 = 555,
+  DT_INT32 = 666,
+  DT_UINT32 = 777,
+  DT_INT64 = 888,
+  DT_UINT64 = 999,
+};
 
 //This must be consistent with python/taso/_cython/CCore.pxd
 enum PMParameter {
@@ -368,6 +389,17 @@ enum OpType {
   OP_REDUCE_PROD, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ReduceProd
   OP_REDUCE_SUM, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ReduceSum
   OP_PAD, //https://github.com/dmlc/tvm/blob/master/topi/python/topi/nn/pad.py
+  OP_SHAPE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Shape
+  OP_SIZE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Size
+  OP_TOPK, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#TopK
+  OP_WHERE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Where
+  OP_CEIL, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Ceil
+  OP_CAST, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Cast
+  OP_EXP, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Exp
+  OP_ROUND, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Round
+  OP_LOG, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Log
+  OP_LOGICAL_NOT, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Not
+  OP_SQRT, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Sqrt
 };
 
 //That this must be consistent with python/taso/_cython/CCore.pxd
@@ -376,13 +408,6 @@ enum ActiMode {
   AC_MODE_SIGMOID,
   AC_MODE_RELU,
   AC_MODE_TANH, 
-  AC_MODE_CEIL, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Ceil
-  AC_MODE_CAST, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Cast
-  AC_MODE_EXP, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Exp
-  AC_MODE_ROUND, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Round
-  AC_MODE_LOG, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Log
-  AC_MODE_NOT, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Not
-  AC_MODE_SQRT, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Sqrt
 };
 
 //That this must be consistent with python/taso/_cython/CCore.pxd
@@ -404,10 +429,14 @@ enum PaddingMode {
 class OpBase {
 public:
   OpBase(Model* _model, OpType _type); // No inputs
-  OpBase(Tensor input, Model* _model, OpType _type);
-  OpBase(Tensor input0, Tensor input1, Model* _model, OpType _type);
-  OpBase(Tensor input0, Tensor input1, Tensor input2, Tensor input3,
-         Tensor input4, Model* _model, OpType _type);
+  OpBase(const Tensor& input, Model* _model, OpType _type);
+  OpBase(const Tensor& input0, const Tensor& input1,
+         Model* _model, OpType _type);
+  OpBase(const Tensor& input0, const Tensor& input1, const Tensor& input2,
+         Model* _model, OpType _type);
+  OpBase(const Tensor& input0, const Tensor& input1,
+         const Tensor& input2, const Tensor& input3,
+         const Tensor& input4, Model* _model, OpType _type);
   OpBase(int n, Tensor* inputs, Model* _model, OpType _type);
   virtual bool get_input_parameter(TNParameter, DIMParameter, int*);
   virtual bool get_int_parameter(PMParameter, int*);
@@ -446,6 +475,13 @@ public:
                             int _strideH, int strideW,
                             PaddingMode _padding,
                             ActiMode _activation = AC_MODE_NONE);
+  TensorHandle batchnorm(const TensorHandle _input,
+                         const TensorHandle _scale,
+                         const TensorHandle _bias,
+                         const TensorHandle _mean,
+                         const TensorHandle _var);
+  TensorHandle ceil(const TensorHandle _input);
+  TensorHandle concat(int axis, int n, const TensorHandle* _inputs);
   TensorHandle constant(int ndim, int* dims, OpType _type);
   TensorHandle conv2d(const TensorHandle _input,
                       int _outputC,
@@ -458,15 +494,21 @@ public:
                       int _strideH, int _strideW,
                       PaddingMode _padding,
                       ActiMode _activation = AC_MODE_NONE);
+  TensorHandle dropout(const TensorHandle _input);
+  TensorHandle element(OpType type,
+                       const TensorHandle _t1,
+                       const TensorHandle _t2);
+  TensorHandle enlarge(const TensorHandle _w1, const TensorHandle _w2);
+  TensorHandle exp(const TensorHandle _input);
   TensorHandle fc(const TensorHandle _input,
                   int _outputC,
                   ActiMode _actiMode = AC_MODE_NONE);
-  TensorHandle topk(const TensorHandle _input,
-                    int _axis, int _numk,
-                    bool _largest, bool _sorted);
+  TensorHandle log(const TensorHandle _input);
+  TensorHandle logical_not(const TensorHandle _input);
   TensorHandle matmul(const TensorHandle _input,
                       const TensorHandle _weight,
                       ActiMode _actiMode = AC_MODE_NONE);
+  TensorHandle merge_gconv(const TensorHandle _weight, int count);
   TensorHandle mul(const TensorHandle _x,
                    const TensorHandle _y);
   TensorHandle pad(const TensorHandle _input,
@@ -486,59 +528,52 @@ public:
   TensorHandle reduce(const TensorHandle _input,
                       OpType _type,
                       const std::vector<int>& axes,
-                      bool keepdims)
+                      bool keepdims);
   TensorHandle reduce_argmax(const TensorHandle _input,
                              const std::vector<int>& axes,
-                             bool keepdims)
+                             bool keepdims);
   TensorHandle reduce_argmin(const TensorHandle _input,
                              const std::vector<int>& axes,
-                             bool keepdims)
+                             bool keepdims);
   TensorHandle reduce_max(const TensorHandle _input,
                           const std::vector<int>& axes,
-                          bool keepdims)
+                          bool keepdims);
   TensorHandle reduce_mean(const TensorHandle _input,
                            const std::vector<int>& axes,
-                           bool keepdims)
+                           bool keepdims);
   TensorHandle reduce_min(const TensorHandle _input,
                           const std::vector<int>& axes,
-                          bool keepdims)
+                          bool keepdims);
   TensorHandle reduce_prod(const TensorHandle _input,
                            const std::vector<int>& axes,
-                           bool keepdims)
+                           bool keepdims);
   TensorHandle reduce_sum(const TensorHandle _input,
                           const std::vector<int>& axes,
-                          bool keepdims)
-  TensorHandle reshape(const TensorHandle _input,
-                       const std::vector<int>& shape);
-  TensorHandle transpose(const TensorHandle _input,
-                         const std::vector<int>& _perm,
-                         bool _shuffle = false);
+                          bool keepdims);
   TensorHandle relu(const TensorHandle _input,
                     bool _inPlace = true);
+  TensorHandle reshape(const TensorHandle _input,
+                       const std::vector<int>& shape);
   TensorHandle shape(const TensorHandle _input,
                      OpType _type);
   TensorHandle sigmoid(const TensorHandle _input,
                        bool _inPlace = true);
-  TensorHandle squeeze(const TensorHandle input, const std::vector<int>& axes);
-  TensorHandle tanh(const TensorHandle _input,
-                    bool _inPlace = true);
-  TensorHandle unsqueeze(const TensorHandle input, const std::vector<int>& axes);
-  TensorHandle where(const TensorHandle _cond, const TensorHandle _x, const TensorHandle _y);
-  TensorHandle batchnorm(const TensorHandle _input,
-                         const TensorHandle _scale,
-                         const TensorHandle _bias,
-                         const TensorHandle _mean,
-                         const TensorHandle _var);
-  TensorHandle concat(int axis, int n, const TensorHandle* _inputs);
-  TensorHandle enlarge(const TensorHandle _w1, const TensorHandle _w2);
-  TensorHandle merge_gconv(const TensorHandle _weight, int count);
   void split(Tensor _input, int axis, int c1, int c2, Tensor* outputs);
   void split(Tensor _input, int axis, int num, const int* sizes, Tensor* outputs);
+  TensorHandle sqrt(const TensorHandle _input);
+  TensorHandle squeeze(const TensorHandle input, const std::vector<int>& axes);
+  TensorHandle transpose(const TensorHandle _input,
+                         const std::vector<int>& _perm,
+                         bool _shuffle = false);
+  TensorHandle tanh(const TensorHandle _input,
+                    bool _inPlace = true);
+  void topk(const TensorHandle _input,
+            int _axis, int _numk,
+            bool _largest, bool _sorted,
+            Tensor* outputs);
+  TensorHandle unsqueeze(const TensorHandle input, const std::vector<int>& axes);
+  TensorHandle where(const TensorHandle _cond, const TensorHandle _x, const TensorHandle _y);
   //void split(Tensor _input, int axis, int num, Tensor* outputs);
-  TensorHandle dropout(const TensorHandle _input);
-  TensorHandle element(OpType type,
-                       const TensorHandle _t1,
-                       const TensorHandle _t2);
 
   // Helper Functions for Cython
   Op find_op_or_fail(size_t guid);
@@ -814,6 +849,9 @@ public:
   void map(void);
   void unmap(void);
   void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
+public:
+  std::vector<int> pad_before, pad_after;
+  float pad_value;
 };
 
 class Reduce : public OpBase {
@@ -1034,7 +1072,7 @@ struct EnlargeCompare {
 struct TopKKey {
   static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 4;
   TopKKey(const Tensor& _input, int _axis, int _numk, bool _largest, bool _sorted);
-  int keys[KEY_LEGNTH];
+  int keys[KEY_LENGTH];
 };
 
 struct TopKCompare {
@@ -1148,7 +1186,7 @@ struct Pool2DCompare {
 
 struct ReduceKey {
   static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + MAX_DIM + 3;
-  ReduceKey(cosnt Tensor&, OpType, const std::vector<int>&, bool);
+  ReduceKey(const Tensor&, OpType, const std::vector<int>&, bool);
   int keys[KEY_LENGTH];
 };
 
@@ -1178,7 +1216,7 @@ struct ReshapeCompare {
 
 struct ShapeKey {
   static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 1;
-  SqueezeKey(const Tensor& _input, OpType _type);
+  ShapeKey(const Tensor& _input, OpType _type);
   int keys[KEY_LENGTH];
 };
 
@@ -1296,7 +1334,7 @@ public:
                           PaddingMode _padding,
                           ActiMode _activation);
   Op get_or_create_reduce(const Tensor& _input, OpType _type,
-                          std::vector<int>& _axes, bool _keepdims);
+                          const std::vector<int>& _axes, bool _keepdims);
   Op get_or_create_reshape(Tensor _input, const std::vector<int>& shape);
   Op get_or_create_shape(const Tensor& _input, OpType _type);
   Op get_or_create_squeeze(const Tensor& input, const std::vector<int>& axes);

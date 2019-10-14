@@ -20,17 +20,17 @@ TensorHandle Graph::where(const TensorHandle _cond,
                           const TensorHandle _x,
                           const TensorHandle _y)
 {
-  if (!model->broadcastable(_cond, _x)) {
+  if (!model->broadcastable(*_cond, *_x)) {
     fprintf(stderr, "Error: cond and x could not be broadcast together");
-    assert(fales);
+    assert(false);
     return NULL;
   }
-  if (!model->broadcastable(_cond, _y)) {
+  if (!model->broadcastable(*_cond, *_y)) {
     fprintf(stderr, "Error: cond and y could not be broadcast together");
     assert(false);
     return NULL;
   }
-  if (!model->broadcastable(_x, _y)) {
+  if (!model->broadcastable(*_x, *_y)) {
     fprintf(stderr, "Error: x and y could not be broadcast together");
     assert(false);
     return NULL;
@@ -78,9 +78,9 @@ Where::Where(Model* _model, const Tensor& _cond,
 : OpBase(_cond, _x, _y, _model, OP_WHERE)
 {
   numOutputs = 1;
-  assert(broadcastable(_cond, _x));
-  assert(broadcastable(_cond, _y));
-  assert(broadcastable(_x, _y));
+  assert(model->broadcastable(_cond, _x));
+  assert(model->broadcastable(_cond, _y));
+  assert(model->broadcastable(_x, _y));
   int num_dim = max(_cond.numDim, max(_x.numDim, _y.numDim));
   int total = 1;
   for (int i = 0; i < num_dim; i++) {

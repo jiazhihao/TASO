@@ -21,8 +21,8 @@ TensorHandle Graph::pad(const TensorHandle _input,
                         const std::vector<int>& _pad_after,
                         float _pad_value)
 {
-  assert(_pad_before.size() == (size_t)_input.numDim);
-  assert(_pad_after.size() == (size_t)_input.numDim);
+  assert(_pad_before.size() == (size_t)(_input->numDim));
+  assert(_pad_after.size() == (size_t)(_input->numDim));
   Op op = model->get_or_create_pad(*_input, _pad_before, _pad_after, _pad_value);
   assert(op != Op::INVALID_OP);
   add_edge(_input->op, op, _input->idx, 0);
@@ -62,7 +62,7 @@ pad_after(_pad_after), pad_value(_pad_value)
   // Pad currently only support the defacult layout
   assert(_input.default_layout());
   outputs[0].numDim = _input.numDim;
-  itn cnt = 1;
+  int cnt = 1;
   for (int i = _input.numDim-1; i >= 0; i--) {
     outputs[0].dim[i] = _input.dim[i] + pad_before[i] + pad_after[i];
     outputs[0].stride[i] = cnt;
@@ -81,8 +81,8 @@ bool Pad::get_int_parameter(PMParameter para, int* value)
   return OpBase::get_int_parameter(para, value);
 }
 
-void Reduce::collect_costs(float& exe_time, float& flops,
-                           float& mem_acc, int& num_kernels)
+void Pad::collect_costs(float& exe_time, float& flops,
+                        float& mem_acc, int& num_kernels)
 {
   exe_time += runtime;
   flops += inputs[0].volume();

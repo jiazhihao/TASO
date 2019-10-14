@@ -82,10 +82,10 @@ TensorHandle Graph::reduce(const TensorHandle _input,
   return t;
 }
 
-Op Model::get_or_create_activation(const Tensor& _input,
-                                   OpType _type,
-                                   const std::vector<int>& axes,
-                                   bool keepdims)
+Op Model::get_or_create_reduce(const Tensor& _input,
+                               OpType _type,
+                               const std::vector<int>& axes,
+                               bool keepdims)
 {
   ReduceKey key(_input, _type, axes, keepdims);
   Reduce* reduceOp;
@@ -104,7 +104,7 @@ Op Model::get_or_create_activation(const Tensor& _input,
 
 Reduce::Reduce(Model* _model, const Tensor& _input, OpType _type,
                const std::vector<int>& _axes, bool _keepdims)
-: OpBase(_input, _model, _type), axes(_axes), keepdims(_keepdims)
+: OpBase(_input, _model, _type), keepdims(_keepdims), axes(_axes)
 {
   numOutputs = 1;
   // Reduce currently only support the defacult layout

@@ -39,6 +39,13 @@ def _batchnorm(op, graph, tensors, initializer):
     outputs = graph.batchnorm(inputs[0], inputs[1], inputs[2], inputs[3], inputs[4])
     return outputs
 
+def _ceil(op, graph, tensors, initializer):
+    assert len(op.input) == 1, "Relu requires exactly one input"
+    assert op.input[0] in tensors
+    attrs = _parse_attribute(op.attribute)
+    outputs = graph.ceil(tensors[op.input[0]])
+    return outputs
+
 def _concat(op, graph, tensors, initializer):
     inputs = _get_inputs(op, tensors)
     attrs = _parse_attribute(op.attribute)
@@ -188,6 +195,7 @@ def _unsqueeze(op, graph, tensors, initializer):
 xf_operators = dict()
 xf_operators['Add'] = _add
 xf_operators['BatchNormalization'] = _batchnorm
+xf_operators['Ceil'] = _ceil
 xf_operators['Concat'] = _concat
 xf_operators['Conv'] = _conv2d
 xf_operators['Dropout'] = _dropout

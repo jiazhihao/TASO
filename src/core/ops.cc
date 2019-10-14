@@ -79,7 +79,8 @@ OpBase::OpBase(Model* _model, OpType _type)
   }
 }
 
-OpBase::OpBase(Tensor _input, Model* _model, OpType _type)
+OpBase::OpBase(const Tensor& _input,
+               Model* _model, OpType _type)
 : numInputs(1), model(_model), type(_type), runtime(0.0f)
 {
   inputs[0] = _input;
@@ -90,7 +91,9 @@ OpBase::OpBase(Tensor _input, Model* _model, OpType _type)
   }
 }
 
-OpBase::OpBase(Tensor _input0, Tensor _input1, Model* _model, OpType _type)
+OpBase::OpBase(const Tensor& _input0,
+               const Tensor& _input1,
+               Model* _model, OpType _type)
 : numInputs(2), model(_model), type(_type), runtime(0.0f)
 {
   inputs[0] = _input0;
@@ -102,8 +105,28 @@ OpBase::OpBase(Tensor _input0, Tensor _input1, Model* _model, OpType _type)
   }
 }
 
-OpBase::OpBase(Tensor _input0, Tensor _input1, Tensor _input2, Tensor _input3,
-               Tensor _input4, Model* _model, OpType _type)
+OpBase::OpBase(const Tensor& _input0,
+               const Tensor& _input1,
+               const Tensor& _input2,
+               Model* _model, OpType _type)
+: numInputs(3), model(_model), type(_type), runtime(0.0f)
+{
+  inputs[0] = _input0;
+  inputs[1] = _input1;
+  inputs[2] = _input2;
+  for (int i = 0; i < MAX_NUM_OUTPUTS; i++) {
+    outputs[i].numDim = 0;
+    for (int j = 0; j < MAX_DIM; j++)
+      outputs[i].dim[j] = 0;
+  }
+}
+
+OpBase::OpBase(const Tensor& _input0,
+               const Tensor& _input1,
+               const Tensor& _input2,
+               const Tensor& _input3,
+               const Tensor& _input4,
+               Model* _model, OpType _type)
 : numInputs(5), model(_model), type(_type), runtime(0.0f)
 {
   inputs[0] = _input0;

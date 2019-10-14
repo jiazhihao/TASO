@@ -96,7 +96,7 @@ Element::Element(Model* _model, OpType _type,
     if (t1_idx >= 0 && _t1.dim[t1_idx] > 1) {
       outputs[0].split[out_idx] = _t1.split[t1_idx];
       if (t2_idx >= 0 && _t2.dim[t2_idx] > 1)
-        otuputs[0].split[out_idx].combine(_t2.split[t2_idx]);
+        outputs[0].split[out_idx].combine(_t2.split[t2_idx]);
     } else if (t2_idx >= 0 && _t2.dim[t2_idx] > 1) {
       outputs[0].split[out_idx] = _t2.split[t2_idx];
     }
