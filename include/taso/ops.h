@@ -294,11 +294,12 @@ enum PMParameter {
   PM_PAD,		// Conv2D, Pool2D
   PM_ACTI,		// Conv2D, Pool2D
   PM_NUMDIM,		// Concat, Transpose
-  PM_AXIS,		// Concat
+  PM_AXIS,		// Concat, Split
   PM_PERM,		// Transpose
   PM_OUTSHUFFLE,	// Transpose
   PM_MERGE_GCONV_COUNT, // MergeGConv
-  PM_AXES,		// Squeeze, Unsqueeze
+  PM_AXES,		// Squeeze, Unsqueeze, Reduce*
+  PM_KEEP_DIMS,         // Reduce*
 };
 
 enum TNParameter {
@@ -352,8 +353,21 @@ enum OpType {
   OP_CONSTANT_ICONV,
   OP_CONSTANT_ONE,
   OP_CONSTANT_POOL,
-  OP_SQUEEZE,
-  OP_UNSQUEEZE,
+  OP_SQUEEZE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Squeeze
+  OP_UNSQUEEZE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Unsqueeze
+  OP_EW_SUB, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Sub
+  OP_EW_DIV, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Div
+  OP_EW_EQUAL, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Equal
+  OP_EW_GREATER, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Greater
+  OP_EW_LESS, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Less
+  OP_REDUCE_ARGMAX, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ArgMax
+  OP_REDUCE_ARGMIN, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ArgMin
+  OP_REDUCE_MAX, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ReduceMax
+  OP_REDUCE_MEAN, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ReduceMean
+  OP_REDUCE_MIN, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ReduceMin
+  OP_REDUCE_PROD, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ReduceProd
+  OP_REDUCE_SUM, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ReduceSum
+  OP_PAD, //https://github.com/dmlc/tvm/blob/master/topi/python/topi/nn/pad.py
 };
 
 //That this must be consistent with python/taso/_cython/CCore.pxd
@@ -361,7 +375,14 @@ enum ActiMode {
   AC_MODE_NONE,
   AC_MODE_SIGMOID,
   AC_MODE_RELU,
-  AC_MODE_TANH,
+  AC_MODE_TANH, 
+  AC_MODE_CEIL, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Ceil
+  AC_MODE_CAST, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Cast
+  AC_MODE_EXP, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Exp
+  AC_MODE_ROUND, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Round
+  AC_MODE_LOG, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Log
+  AC_MODE_NOT, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Not
+  AC_MODE_SQRT, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Sqrt
 };
 
 //That this must be consistent with python/taso/_cython/CCore.pxd
@@ -440,11 +461,18 @@ public:
   TensorHandle fc(const TensorHandle _input,
                   int _outputC,
                   ActiMode _actiMode = AC_MODE_NONE);
+  TensorHandle topk(const TensorHandle _input,
+                    int _axis, int _numk,
+                    bool _largest, bool _sorted);
   TensorHandle matmul(const TensorHandle _input,
                       const TensorHandle _weight,
                       ActiMode _actiMode = AC_MODE_NONE);
   TensorHandle mul(const TensorHandle _x,
                    const TensorHandle _y);
+  TensorHandle pad(const TensorHandle _input,
+                   const std::vector<int>& _pad_before,
+                   const std::vector<int>& _pad_after,
+                   float _pad_value);
   TensorHandle pool2d_max(const TensorHandle _input,
                           int _kernelH, int _kernelW,
                           int _strideH, int _strideW,
@@ -455,6 +483,31 @@ public:
                           int _strideH, int _strideW,
                           PaddingMode _padding,
                           ActiMode _activation = AC_MODE_NONE);
+  TensorHandle reduce(const TensorHandle _input,
+                      OpType _type,
+                      const std::vector<int>& axes,
+                      bool keepdims)
+  TensorHandle reduce_argmax(const TensorHandle _input,
+                             const std::vector<int>& axes,
+                             bool keepdims)
+  TensorHandle reduce_argmin(const TensorHandle _input,
+                             const std::vector<int>& axes,
+                             bool keepdims)
+  TensorHandle reduce_max(const TensorHandle _input,
+                          const std::vector<int>& axes,
+                          bool keepdims)
+  TensorHandle reduce_mean(const TensorHandle _input,
+                           const std::vector<int>& axes,
+                           bool keepdims)
+  TensorHandle reduce_min(const TensorHandle _input,
+                          const std::vector<int>& axes,
+                          bool keepdims)
+  TensorHandle reduce_prod(const TensorHandle _input,
+                           const std::vector<int>& axes,
+                           bool keepdims)
+  TensorHandle reduce_sum(const TensorHandle _input,
+                          const std::vector<int>& axes,
+                          bool keepdims)
   TensorHandle reshape(const TensorHandle _input,
                        const std::vector<int>& shape);
   TensorHandle transpose(const TensorHandle _input,
@@ -462,12 +515,15 @@ public:
                          bool _shuffle = false);
   TensorHandle relu(const TensorHandle _input,
                     bool _inPlace = true);
+  TensorHandle shape(const TensorHandle _input,
+                     OpType _type);
   TensorHandle sigmoid(const TensorHandle _input,
                        bool _inPlace = true);
   TensorHandle squeeze(const TensorHandle input, const std::vector<int>& axes);
   TensorHandle tanh(const TensorHandle _input,
                     bool _inPlace = true);
   TensorHandle unsqueeze(const TensorHandle input, const std::vector<int>& axes);
+  TensorHandle where(const TensorHandle _cond, const TensorHandle _x, const TensorHandle _y);
   TensorHandle batchnorm(const TensorHandle _input,
                          const TensorHandle _scale,
                          const TensorHandle _bias,
@@ -627,33 +683,6 @@ public:
   ActiMode activation;
 };
 
-class Reshape : public OpBase {
-public:
-  Reshape(Model* _model, Tensor _input, const std::vector<int>& shape);
-  ~Reshape(void);
-  bool get_int_parameter(PMParameter para, int*);
-  void forward(bool block);
-  void map(void);
-  void unmap(void);
-  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
-};
-
-class Transpose : public OpBase {
-public:
-  Transpose(Model* _model, Tensor _input,
-            const std::vector<int>& perm,
-            bool _shuffle);
-  ~Transpose(void);
-  bool get_int_parameter(PMParameter para, int*);
-  void forward(bool block);
-  void map(void);
-  void unmap(void);
-  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
-public:
-  int permIdx;
-  bool shuffle;
-};
-
 class Activation : public OpBase {
 public:
   Activation(Model* _model, Tensor _input, OpType _type, bool _inPlace);
@@ -706,31 +735,6 @@ public:
   bool needCopy[MAX_NUM_INPUTS];
 };
 
-class Split : public OpBase {
-public:
-  Split(Model* _model, Tensor _input, int axis, int n, int* sizes);
-  ~Split(void);
-  bool get_int_parameter(PMParameter para, int*);
-  void forward(bool block);
-  void map(void);
-  void unmap(void);
-  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
-public:
-  int axis;
-  int sizes[MAX_NUM_OUTPUTS];
-};
-
-class NoOp : public OpBase {
-public:
-  NoOp(Model* _model, Tensor _input, OpType _type);
-  ~NoOp(void);
-  bool get_int_parameter(PMParameter para, int*);
-  void forward(bool block);
-  void map(void);
-  void unmap(void);
-  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
-};
-
 class Element : public OpBase {
 public:
   Element(Model* _model, OpType _type, const Tensor& _t1, const Tensor& _t2);
@@ -758,6 +762,22 @@ public:
   void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
 };
 
+class TopK : public OpBase {
+public:
+  TopK(Model* _model, const Tensor& _input,
+       int _axis, int _numk,
+       bool _largest, bool _sorted);
+  ~TopK(void);
+  bool get_int_parameter(PMParameter para, int*);
+  void forward(bool block);
+  void map(void);
+  void unmap(void);
+  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
+public:
+  int axis;
+  bool largest, sorted;
+};
+
 class MergeGConv : public OpBase {
 public:
   MergeGConv(Model* _model, const Tensor& _weight, int count);
@@ -769,6 +789,82 @@ public:
   void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
 public:
   int count;
+};
+
+class NoOp : public OpBase {
+public:
+  NoOp(Model* _model, Tensor _input, OpType _type);
+  ~NoOp(void);
+  bool get_int_parameter(PMParameter para, int*);
+  void forward(bool block);
+  void map(void);
+  void unmap(void);
+  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
+};
+
+class Pad : public OpBase {
+public:
+  Pad(Model* _model, const Tensor& _input,
+      const std::vector<int>& _pad_before,
+      const std::vector<int>& _pad_after,
+      float _pad_value);
+  ~Pad(void);
+  bool get_int_parameter(PMParameter para, int*);
+  void forward(bool block);
+  void map(void);
+  void unmap(void);
+  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
+};
+
+class Reduce : public OpBase {
+public:
+  Reduce(Model* _model, const Tensor& _input, OpType _type,
+         const std::vector<int>& _axes, bool _keepdims);
+  ~Reduce(void);
+  bool get_int_parameter(PMParameter para, int*);
+  void forward(bool block);
+  void map(void);
+  void unmap(void);
+  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
+public:
+  bool keepdims;
+  std::vector<int> axes;
+};
+
+class Reshape : public OpBase {
+public:
+  Reshape(Model* _model, Tensor _input, const std::vector<int>& shape);
+  ~Reshape(void);
+  bool get_int_parameter(PMParameter para, int*);
+  void forward(bool block);
+  void map(void);
+  void unmap(void);
+  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
+};
+
+class Shape : public OpBase {
+public:
+  Shape(Model* _model, const Tensor& _input, OpType _type);
+  ~Shape(void);
+  bool get_int_parameter(PMParameter para, int*);
+  void forward(bool block);
+  void map(void);
+  void unmap(void);
+  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
+};
+
+class Split : public OpBase {
+public:
+  Split(Model* _model, Tensor _input, int axis, int n, int* sizes);
+  ~Split(void);
+  bool get_int_parameter(PMParameter para, int*);
+  void forward(bool block);
+  void map(void);
+  void unmap(void);
+  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
+public:
+  int axis;
+  int sizes[MAX_NUM_OUTPUTS];
 };
 
 class Squeeze : public OpBase {
@@ -784,6 +880,22 @@ public:
   std::vector<int> axes;
 };
 
+class Transpose : public OpBase {
+public:
+  Transpose(Model* _model, Tensor _input,
+            const std::vector<int>& perm,
+            bool _shuffle);
+  ~Transpose(void);
+  bool get_int_parameter(PMParameter para, int*);
+  void forward(bool block);
+  void map(void);
+  void unmap(void);
+  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
+public:
+  int permIdx;
+  bool shuffle;
+};
+
 class Unsqueeze : public OpBase {
 public:
   Unsqueeze(Model* _model, const Tensor& input, const std::vector<int>& axes);
@@ -797,120 +909,15 @@ public:
   std::vector<int> axes;
 };
 
-//keys are (ndim, dims[0..ndims-1], constant_mode
-struct ConstantKey {
-  static const int KEY_LENGTH = MAX_DIM + 2;
-  ConstantKey(int, int*, OpType);
-  int keys[KEY_LENGTH];
-};
-
-struct ConstantCompare {
-  bool operator()(const ConstantKey& a, const ConstantKey& b) const {
-    for (int i = 0; i < ConstantKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  }
-};
-
-// keys are (strideH, strideW, padding, activation, input, weight)
-struct Conv2DKey {
-  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH * 2 + 4;
-  Conv2DKey(Tensor, Tensor, int, int,
-            PaddingMode, ActiMode);
-  int keys[KEY_LENGTH];
-};
-
-struct Conv2DCompare {
-  bool operator()(const Conv2DKey& a, const Conv2DKey& b) const {
-    for (int i = 0; i < Conv2DKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
-};
-
-// keys are (inputX, inputN, inputC, outputC, acti)
-//
-struct MatmulKey {
-  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH * 2 + 1;
-  MatmulKey(Tensor, Tensor, ActiMode);
-  int keys[KEY_LENGTH];
-};
-
-struct MatmulCompare {
-  bool operator()(const MatmulKey& a, const MatmulKey& b) const {
-    for (int i = 0; i < MatmulKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
-};
-
-// keys are (inputX, inputN, inputC, outputC, acti)
-//
-struct MulKey {
-  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH * 2;
-  MulKey(const Tensor&, const Tensor&);
-  int keys[KEY_LENGTH];
-};
-
-struct MulCompare {
-  bool operator()(const MulKey& a, const MulKey& b) const {
-    for (int i = 0; i < MulKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
-};
-
-// keys are (inputN, inputC, inputH, inputW, kernelH, kernelW,              
-//           strideH, strideW, padding, activation, type,
-//           input.split[0], input.split[1]
-struct Pool2DKey {
-  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 7;
-  Pool2DKey(Tensor, OpType, int, int, int, int,
-            PaddingMode, ActiMode);
-  int keys[KEY_LENGTH];
-};
-
-struct Pool2DCompare {
-  bool operator()(const Pool2DKey& a, const Pool2DKey& b) const {
-    for (int i = 0; i < Pool2DKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
-};
-
-struct ReshapeKey {
-  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + MAX_DIM + 1;
-  ReshapeKey(Tensor, const std::vector<int>&);
-  int keys[KEY_LENGTH];
-};
-
-struct ReshapeCompare {
-  bool operator()(const ReshapeKey& a, const ReshapeKey& b) const {
-    for (int i = 0; i < ReshapeKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
-};
-
-struct TransposeKey {
-  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 2;
-  TransposeKey(Tensor, const std::vector<int>&, bool);
-  int keys[KEY_LENGTH];
-};
-
-struct TransposeCompare {
-  bool operator()(const TransposeKey& a, const TransposeKey& b) const {
-    for (int i = 0; i < TransposeKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
+class Where : public OpBase {
+public:
+  Where(Model* _model, const Tensor& _input, const Tensor& _x, const Tensor& _y);
+  ~Where(void);
+  bool get_int_parameter(PMParameter para, int*);
+  void forward(bool block);
+  void map(void);
+  void unmap(void);
+  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
 };
 
 struct ActivationKey {
@@ -959,32 +966,34 @@ struct ConcatCompare {
   };
 };
 
-// Key ordering:
-// axis, n, sizes[0], ..., sizes[n-1], input
-struct SplitKey {
-  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + MAX_NUM_OUTPUTS + 2;
-  SplitKey(Tensor input, int axis, int n, int* channels);
+
+//keys are (ndim, dims[0..ndims-1], constant_mode
+struct ConstantKey {
+  static const int KEY_LENGTH = MAX_DIM + 2;
+  ConstantKey(int, int*, OpType);
   int keys[KEY_LENGTH];
 };
 
-struct SplitCompare {
-  bool operator()(const SplitKey& a, const SplitKey& b) const {
-    for (int i = 0; i < SplitKey::KEY_LENGTH; i++)
+struct ConstantCompare {
+  bool operator()(const ConstantKey& a, const ConstantKey& b) const {
+    for (int i = 0; i < ConstantKey::KEY_LENGTH; i++)
       if (a.keys[i] != b.keys[i])
         return a.keys[i] < b.keys[i];
     return false;
-  };
+  }
 };
 
-struct NoopKey {
-  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 1;
-  NoopKey(Tensor input, OpType typee);
+// keys are (strideH, strideW, padding, activation, input, weight)
+struct Conv2DKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH * 2 + 4;
+  Conv2DKey(Tensor, Tensor, int, int,
+            PaddingMode, ActiMode);
   int keys[KEY_LENGTH];
 };
 
-struct NoopCompare {
-  bool operator()(const NoopKey& a, const NoopKey& b) const {
-    for (int i = 0; i < NoopKey::KEY_LENGTH; i++)
+struct Conv2DCompare {
+  bool operator()(const Conv2DKey& a, const Conv2DKey& b) const {
+    for (int i = 0; i < Conv2DKey::KEY_LENGTH; i++)
       if (a.keys[i] != b.keys[i])
         return a.keys[i] < b.keys[i];
     return false;
@@ -1021,6 +1030,39 @@ struct EnlargeCompare {
   };
 };
 
+
+struct TopKKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 4;
+  TopKKey(const Tensor& _input, int _axis, int _numk, bool _largest, bool _sorted);
+  int keys[KEY_LEGNTH];
+};
+
+struct TopKCompare {
+  bool operator()(const TopKKey& a, const TopKKey& b) const {
+    for (int i = 0; i < TopKKey::KEY_LENGTH; i++)
+      if (a.keys[i] != b.keys[i])
+        return a.keys[i] < b.keys[i];
+    return false;
+  };
+};
+
+// keys are (inputX, inputN, inputC, outputC, acti)
+//
+struct MatmulKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH * 2 + 1;
+  MatmulKey(Tensor, Tensor, ActiMode);
+  int keys[KEY_LENGTH];
+};
+
+struct MatmulCompare {
+  bool operator()(const MatmulKey& a, const MatmulKey& b) const {
+    for (int i = 0; i < MatmulKey::KEY_LENGTH; i++)
+      if (a.keys[i] != b.keys[i])
+        return a.keys[i] < b.keys[i];
+    return false;
+  };
+};
+
 struct MergeGConvKey {
   static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 1;
   MergeGConvKey(const Tensor& weight, int count);
@@ -1030,6 +1072,119 @@ struct MergeGConvKey {
 struct MergeGConvCompare {
   bool operator()(const MergeGConvKey& a, const MergeGConvKey& b) const {
     for (int i = 0; i < MergeGConvKey::KEY_LENGTH; i++)
+      if (a.keys[i] != b.keys[i])
+        return a.keys[i] < b.keys[i];
+    return false;
+  };
+};
+
+// keys are (inputX, inputN, inputC, outputC, acti)
+struct MulKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH * 2;
+  MulKey(const Tensor&, const Tensor&);
+  int keys[KEY_LENGTH];
+};
+
+struct MulCompare {
+  bool operator()(const MulKey& a, const MulKey& b) const {
+    for (int i = 0; i < MulKey::KEY_LENGTH; i++)
+      if (a.keys[i] != b.keys[i])
+        return a.keys[i] < b.keys[i];
+    return false;
+  };
+};
+
+struct NoopKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 1;
+  NoopKey(Tensor input, OpType typee);
+  int keys[KEY_LENGTH];
+};
+
+struct NoopCompare {
+  bool operator()(const NoopKey& a, const NoopKey& b) const {
+    for (int i = 0; i < NoopKey::KEY_LENGTH; i++)
+      if (a.keys[i] != b.keys[i])
+        return a.keys[i] < b.keys[i];
+    return false;
+  };
+};
+
+struct PadKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 2 * MAX_DIM + 1;
+  PadKey(const Tensor& _input,
+         const std::vector<int>& _pad_before,
+         const std::vector<int>& _pad_after,
+         float _pad_value);
+  int keys[KEY_LENGTH];
+};
+
+struct PadCompare {
+  bool operator()(const PadKey& a, const PadKey& b) const {
+    for (int i = 0; i < PadKey::KEY_LENGTH; i++)
+      if (a.keys[i] != b.keys[i])
+        return a.keys[i] < b.keys[i];
+    return false;
+  };
+};
+
+// keys are (inputN, inputC, inputH, inputW, kernelH, kernelW,              
+//           strideH, strideW, padding, activation, type,
+//           input.split[0], input.split[1]
+struct Pool2DKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 7;
+  Pool2DKey(Tensor, OpType, int, int, int, int,
+            PaddingMode, ActiMode);
+  int keys[KEY_LENGTH];
+};
+
+struct Pool2DCompare {
+  bool operator()(const Pool2DKey& a, const Pool2DKey& b) const {
+    for (int i = 0; i < Pool2DKey::KEY_LENGTH; i++)
+      if (a.keys[i] != b.keys[i])
+        return a.keys[i] < b.keys[i];
+    return false;
+  };
+};
+
+struct ReduceKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + MAX_DIM + 3;
+  ReduceKey(cosnt Tensor&, OpType, const std::vector<int>&, bool);
+  int keys[KEY_LENGTH];
+};
+
+struct ReduceCompare {
+  bool operator()(const ReduceKey& a, const ReduceKey& b) const {
+    for (int i = 0; i < ReduceKey::KEY_LENGTH; i++)
+      if (a.keys[i] != b.keys[i])
+        return a.keys[i] < b.keys[i];
+    return false;
+  };
+};
+
+struct ReshapeKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + MAX_DIM + 1;
+  ReshapeKey(Tensor, const std::vector<int>&);
+  int keys[KEY_LENGTH];
+};
+
+struct ReshapeCompare {
+  bool operator()(const ReshapeKey& a, const ReshapeKey& b) const {
+    for (int i = 0; i < ReshapeKey::KEY_LENGTH; i++)
+      if (a.keys[i] != b.keys[i])
+        return a.keys[i] < b.keys[i];
+    return false;
+  };
+};
+
+struct ShapeKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 1;
+  SqueezeKey(const Tensor& _input, OpType _type);
+  int keys[KEY_LENGTH];
+};
+
+struct ShapeCompare {
+  bool operator()(const ShapeKey& a, const ShapeKey& b) const {
+    for (int i = 0; i < ShapeKey::KEY_LENGTH; i++)
       if (a.keys[i] != b.keys[i])
         return a.keys[i] < b.keys[i];
     return false;
@@ -1051,6 +1206,36 @@ struct SqueezeCompare {
   };
 };
 
+struct SplitKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + MAX_NUM_OUTPUTS + 2;
+  SplitKey(Tensor input, int axis, int n, int* channels);
+  int keys[KEY_LENGTH];
+};
+
+struct SplitCompare {
+  bool operator()(const SplitKey& a, const SplitKey& b) const {
+    for (int i = 0; i < SplitKey::KEY_LENGTH; i++)
+      if (a.keys[i] != b.keys[i])
+        return a.keys[i] < b.keys[i];
+    return false;
+  };
+};
+
+struct TransposeKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 2;
+  TransposeKey(Tensor, const std::vector<int>&, bool);
+  int keys[KEY_LENGTH];
+};
+
+struct TransposeCompare {
+  bool operator()(const TransposeKey& a, const TransposeKey& b) const {
+    for (int i = 0; i < TransposeKey::KEY_LENGTH; i++)
+      if (a.keys[i] != b.keys[i])
+        return a.keys[i] < b.keys[i];
+    return false;
+  };
+};
+
 struct UnsqueezeKey {
   static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + MAX_DIM;
   UnsqueezeKey(const Tensor& input, const std::vector<int>& axes);
@@ -1066,60 +1251,90 @@ struct UnsqueezeCompare {
   };
 };
 
+struct WhereKey {
+  static const int KEY_LENGTH = 3 * Tensor::MAX_KEY_LENGTH;
+  WhereKey(const Tensor& _cond, const Tensor& _x, const Tensor& _y);
+  int keys[KEY_LENGTH];
+};
+
+struct WhereCompare {
+  bool operator()(const WhereKey& a, const WhereKey& b) const {
+    for (int i = 0; i < WhereKey::KEY_LENGTH; i++)
+      if (a.keys[i] != b.keys[i])
+        return a.keys[i] < b.keys[i];
+    return false;
+  };
+};
+
 class Model {
 public:
   Model();
+  Op get_or_create_activation(Tensor _input, OpType _type,
+                              bool _inPlace);
+  Op get_or_create_batchnorm(Tensor _input, Tensor _scale, Tensor _bias,
+                             Tensor _mean, Tensor _var);
+  Op get_or_create_concat(int axis, int n, Tensor* _inputs, bool* _needCopy);
   Op get_or_create_constant(int ndim, int* dims, OpType type);
   Op get_or_create_conv2d(Tensor _input, Tensor _weight,
                           int _strideH, int _strideW,
                           PaddingMode _padding,
                           ActiMode _activation);
+  Op get_or_create_element(OpType type, const Tensor& t1, const Tensor& t2);
+  Op get_or_create_enlarge(Tensor _w1, Tensor _w2);
   Op get_or_create_matmul(Tensor _input, Tensor _weight,
                           ActiMode _actimode);
   Op get_or_create_mul(const Tensor& x,
-                          const Tensor& y);
+                       const Tensor& y);
+  Op get_or_create_pad(const Tensor& _input,
+                       const std::vector<int>& _pad_before,
+                       const std::vector<int>& _pad_after,
+                       float _pad_value);
   Op get_or_create_pool2d(Tensor _input, Tensor _weight,
                           OpType _type,
                           int _kernelH, int _kernelW,
                           int _strideH, int _strideW,
                           PaddingMode _padding,
                           ActiMode _activation);
+  Op get_or_create_reduce(const Tensor& _input, OpType _type,
+                          std::vector<int>& _axes, bool _keepdims);
   Op get_or_create_reshape(Tensor _input, const std::vector<int>& shape);
+  Op get_or_create_shape(const Tensor& _input, OpType _type);
+  Op get_or_create_squeeze(const Tensor& input, const std::vector<int>& axes);
+  Op get_or_create_split(Tensor _input, int axis, int n, int* channels);
+  Op get_or_create_split(Tensor _input, int axis, int n);
+  Op get_or_create_topk(const Tensor& _input, int _axis, int _numk,
+                        bool _largest, bool _sorted);
   Op get_or_create_transpose(Tensor _input, const std::vector<int>& _perm,
                              bool _shuffle);
   Op get_or_create_transpose(Tensor _input, int permIdx,
                              bool _shuffle);
-  Op get_or_create_activation(Tensor _input, OpType _type,
-                              bool _inPlace);
-  Op get_or_create_batchnorm(Tensor _input, Tensor _scale, Tensor _bias,
-                             Tensor _mean, Tensor _var);
-  Op get_or_create_concat(int axis, int n, Tensor* _inputs, bool* _needCopy);
-  Op get_or_create_split(Tensor _input, int axis, int n, int* channels);
-  Op get_or_create_split(Tensor _input, int axis, int n);
   Op get_or_create_noop(Tensor _input, OpType _type);
-  Op get_or_create_element(OpType type, const Tensor& t1, const Tensor& t2);
-  Op get_or_create_enlarge(Tensor _w1, Tensor _w2);
   Op get_or_create_merge_gconv(const Tensor& _weight,
                                int count);
-  Op get_or_create_squeeze(const Tensor& input, const std::vector<int>& axes);
   Op get_or_create_unsqueeze(const Tensor& input, const std::vector<int>& axes);
+  Op get_or_create_where(const Tensor& _cond, const Tensor& _x, const Tensor& _y);
   // Special API for creating weight and input operator
   Op create_input(Tensor _input, OpType _type);
   Op create_weight(Tensor _weight, OpType _type);
   void measure_conv2d_cost(Conv2D*);
   void measure_matmul_cost(Matmul*);
   void measure_mul_cost(Mul*);
+  void measure_pad_cost(Pad*);
   void measure_pool2d_cost(Pool2D*);
+  void measure_topk_cost(TopK*);
   void measure_transpose_cost(Transpose*);
+  void measure_reduce_cost(Reduce*);
   void measure_reshape_cost(Reshape*);
   void measure_activation_cost(Activation*);
   void measure_batchnorm_cost(BatchNorm*);
   void measure_concat_cost(Concat*);
+  void measure_shape_cost(Shape*);
   void measure_split_cost(Split*);
   void measure_element_cost(Element*);
   void measure_enlarge_cost(Enlarge*);
   void measure_squeeze_cost(Squeeze*);
   void measure_unsqueeze_cost(Unsqueeze*);
+  void measure_where_cost(Where*);
   void* allocate_memory(size_t size, const DATATYPE* initial_data= NULL);
   bool copy_memory(DATATYPE* dst, const DATATYPE* src, size_t size);
   float measure_oplist_runtime(const std::vector<OpBase*>& list);
@@ -1146,23 +1361,28 @@ public:
   // variables for element wise
   cudnnOpTensorDescriptor_t opDesc;
 #endif
-  std::map<ConstantKey, Constant*, ConstantCompare> constant;
-  std::map<Conv2DKey, Conv2D*, Conv2DCompare> conv2d;
-  std::map<MatmulKey, Matmul*, MatmulCompare> matmul;
-  std::map<MulKey, Mul*, MulCompare> mul;
-  std::map<Pool2DKey, Pool2D*, Pool2DCompare> pool2d;
-  std::map<ReshapeKey, Reshape*, ReshapeCompare> reshape;
-  std::map<TransposeKey, Transpose*, TransposeCompare> transpose;
   std::map<ActivationKey, Activation*, ActivationCompare> activation;
   std::map<BatchNormKey, BatchNorm*, BatchNormCompare> batchnorm;
   std::map<ConcatKey, Concat*, ConcatCompare> concat;
-  std::map<SplitKey, Split*, SplitCompare> split;
-  std::map<NoopKey, NoOp*, NoopCompare> noop;
+  std::map<ConstantKey, Constant*, ConstantCompare> constant;
+  std::map<Conv2DKey, Conv2D*, Conv2DCompare> conv2d;
   std::map<ElementKey, Element*, ElementCompare> element;
   std::map<EnlargeKey, Enlarge*, EnlargeCompare> enlarge;
+  std::map<MatmulKey, Matmul*, MatmulCompare> matmul;
   std::map<MergeGConvKey, MergeGConv*, MergeGConvCompare> merge_gconv;
+  std::map<MulKey, Mul*, MulCompare> mul;
+  std::map<NoopKey, NoOp*, NoopCompare> noop;
+  std::map<PadKey, Pad*, PadCompare> pad;
+  std::map<Pool2DKey, Pool2D*, Pool2DCompare> pool2d;
+  std::map<ReduceKey, Reduce*, ReduceCompare> reduce;
+  std::map<ReshapeKey, Reshape*, ReshapeCompare> reshape;
+  std::map<ShapeKey, Shape*, ShapeCompare> shape;
+  std::map<SplitKey, Split*, SplitCompare> split;
   std::map<SqueezeKey, Squeeze*, SqueezeCompare> squeeze;
+  std::map<TopKKey, TopK*, TopKCompare> topk;
+  std::map<TransposeKey, Transpose*, TransposeCompare> transpose;
   std::map<UnsqueezeKey, Unsqueeze*, UnsqueezeCompare> unsqueeze;
+  std::map<WhereKey, Where*, WhereCompare> where;
   DATATYPE *inputPtr, *biasPtr, *outputPtr, *filterPtr;
   // variables for batch norm
   DATATYPE *scalePtr, *runningMean, *runningVar, *saveMean, *saveVar;
