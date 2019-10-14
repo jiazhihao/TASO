@@ -1,6 +1,6 @@
 # TASO: A Tensor Algebra SuperOptimizer for Deep Learning
 
-TASO optimizes the computation graphs of DNN models using automatically generated graph transformations.
+TASO optimizes the computation graphs of DNN models using automatically generated and verified graph transformations.
 For a given DNN model, the transformations build a large search space of potential computation graphs.
 TASO employs a cost-based search algorithm to explore the space, and automatically discovers an optimized computation graph.
 
@@ -14,7 +14,6 @@ TASO employs a cost-based search algorithm to explore the space, and automatical
 * Cython 0.28 or higher
 * ONNX 1.5 or higher
 * CUDA 9.0 or higher and CUDNN 7.0 or higher
-* MKL support is coming
 
 ### Install from Source
 
@@ -36,7 +35,7 @@ cd python
 python setup.py install
 ```
 
-## Use TASO to Optimize DNN Computation
+## Using TASO 
 
 ### Optimize Pre-trained ONNX Models
 
@@ -51,7 +50,7 @@ taso_graph = taso.optimize(old_model)
 new_model = taso.export_onnx(taso_graph)
 onnx.save(new_model, "/path/to/save/new/onnx/model")
 ```
-The optimized model has the same accuracy (i.e., mathematically equivalent) as the original one, and can be directly used by existing deep learning frameworks.
+The optimized model has the same accuracy as the original and can be directly used by existing deep learning frameworks.
 The following figure shows the end-to-end inference performance comparison on a NVIDIA V100 GPU.
 The original and TASO-optimized ONNX files are available in the `onnx` folder.
 <div align="center">
@@ -60,8 +59,8 @@ The original and TASO-optimized ONNX files are available in the `onnx` folder.
 
 ### Optimizing DNN Models using the Python Interface
 
-TASO can also be used to optimize arbitrary DNN models using the Python interface. 
-The following code snippet shows how to build the left-most DNN graph depicted in the figure. TASO automatically performs a series of non-trivial transformations, and eventually discovers the right-most DNN graph, which is 1.3x faster on a V100 GPU. More DNN examples are available in the `examples` folder.
+TASO can also optimize arbitrary DNN models using the Python interface. 
+The following code snippet builds the left-most DNN graph depicted in the figure. TASO automatically performs a series of non-trivial transformations, and eventually discovers the right-most DNN graph, which is 1.3x faster on a V100 GPU. More DNN examples are available in the `examples` folder.
 
 <div align="center">
   <img src="https://github.com/jiazhihao/TASO/blob/master/figures/graph_subst.png">
