@@ -10,6 +10,15 @@ void assign_kernel(float* ptr, int size, float value)
   }
 }
 
+__global__
+void copy_kernel(float* dst, const float* src, int size)
+{
+  CUDA_KERNEL_LOOP(i, size)
+  {
+    dst[i] = src[i];
+  }
+}
+
 cudnnActivationMode_t get_activation_mode(ActiMode activation)
 {
   switch (activation) {
@@ -32,10 +41,10 @@ void helperSetTensorDescriptor(const Tensor& tensor,
   switch(tensor.numDim) {
     case 1:
     {
-      int dims[] = {tensor.dim[0], 1, 1};
-      int strides[] = {tensor.stride[0], 1, 1};
+      int dims[] = {tensor.dim[0], 1, 1, 1};
+      int strides[] = {tensor.stride[0], 1, 1, 1};
       checkCUDNN(cudnnSetTensorNdDescriptor(tensorDesc, CUDNN_DATA_FLOAT,
-                                            3, dims, strides));
+                                            4, dims, strides));
       break;
     }
     case 2:
@@ -53,5 +62,42 @@ void helperSetTensorDescriptor(const Tensor& tensor,
           tensor.numDim, tensor.dim, tensor.stride));
     }
   }
+}
+
+void helperSetBroadcastableTensorDescriptor(const Tensor& input,
+                                            const Tensor& output,
+                                            cudnnTensorDescriptor_t tensorDesc)
+{
+  int dims[16], strides[16];
+  assert(output.numDim <= 16);
+  assert(input.numDim <= output.numDim);
+  for (int i = 0; i < output.numDim; i++) {
+    dims[output.numDim-1-i] = output.dim[output.numDim-1-i];
+    if (i < input.numDim && input.dim[input.numDim-1-i] > 0) {
+      strides[output.numDim-1-i] = input.stride[input.numDim-1-i];
+    } else {
+      if (dims[output.numDim-1-i] > 1) {
+        fprintf(stderr, "cuDNN does noot suppoort zero stride for broadcast\n"
+                "Consider switch to other library for broadcastable operators.\n");
+        assert(false);
+      }
+      strides[output.numDim-1-i] = 1;
+    }
+  }
+  int num_dim = output.numDim;
+  if (output.numDim < 4) {
+    num_dim = 4;
+    for (int i = output.numDim; i < num_dim; i++) {
+      dims[i] = 1;
+      strides[i] = 1;
+    }
+  }
+  //for (int i = 0; i < num_dim; i++)
+  //  printf("dims[%d] = %d input.dim(%d) output.dim(%d)\n", i, dims[i], input.dim[i], output.dim[i]);
+  //for (int i = 0; i < num_dim; i++)
+  //  printf("strides[%d] = %d input.stride(%d) output.stride(%d)\n", i, strides[i], input.stride[i], output.stride[i]);
+ 
+  checkCUDNN(cudnnSetTensorNdDescriptor(tensorDesc, CUDNN_DATA_FLOAT,
+      num_dim, dims, strides));
 }
 

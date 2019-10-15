@@ -67,9 +67,9 @@ Mul::Mul(Model* _model, const Tensor& x, const Tensor& y)
 Mul::~Mul(void)
 {}
 
-bool Mul::get_parameter(PMParameter para, int* value)
+bool Mul::get_int_parameter(PMParameter para, int* value)
 {
-  return OpBase::get_parameter(para, value);
+  return OpBase::get_int_parameter(para, value);
 }
 
 void Mul::collect_costs(float& exe_time, float& flops,

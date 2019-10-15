@@ -206,7 +206,7 @@ Conv2D::Conv2D(Model* _model, Tensor _input, Tensor _weight,
 Conv2D::~Conv2D(void)
 {}
 
-bool Conv2D::get_parameter(PMParameter para, int* value)
+bool Conv2D::get_int_parameter(PMParameter para, int* value)
 {
   switch (para) {
     case PM_GROUP:
@@ -236,7 +236,7 @@ bool Conv2D::get_parameter(PMParameter para, int* value)
       *value = (int) activation;
       return true;
     default:
-      return OpBase::get_parameter(para, value);
+      return OpBase::get_int_parameter(para, value);
   }
 }
 

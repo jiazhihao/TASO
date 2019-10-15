@@ -174,7 +174,7 @@ Pool2D::~Pool2D(void)
 {
 }
 
-bool Pool2D::get_parameter(PMParameter para, int* value)
+bool Pool2D::get_int_parameter(PMParameter para, int* value)
 {
   switch (para) {
     case PM_KERNEL_H:
@@ -196,7 +196,7 @@ bool Pool2D::get_parameter(PMParameter para, int* value)
       *value = activation;
       return true;
     default:
-      return OpBase::get_parameter(para, value);
+      return OpBase::get_int_parameter(para, value);
   }
 }
 

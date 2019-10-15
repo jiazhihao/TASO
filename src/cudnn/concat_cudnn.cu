@@ -49,8 +49,8 @@ void assign_with_stride(DATATYPE* dst,
 void Concat::forward(bool block)
 {
   int offset = 0;
-  for (int i = 0; i < numInputs; i++)
-    if (needCopy[i]) {
+  for (int i = 0; i < numInputs; i++) {
+    //if (needCopy[i]) {
     int dst_blk_size = 1, src_blk_size = 1, num_blocks = 1;
     for (int j = inputs[i].numDim-1; j >= 0; j--)
       if (j >= axis) {

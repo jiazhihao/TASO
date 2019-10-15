@@ -47,8 +47,15 @@ inline int GET_BLOCKS(const int N)
 void helperSetTensorDescriptor(const taso::Tensor& tensor,
                                cudnnTensorDescriptor_t tensorDesc);
 
+void helperSetBroadcastableTensorDescriptor(const taso::Tensor& input,
+                                            const taso::Tensor& output,
+                                            cudnnTensorDescriptor_t tensorDesc);
+
 __global__
 void assign_kernel(float* ptr, int size, float value);
+
+__global__
+void copy_kernel(float* dst, const float* src, int size);
 
 cudnnActivationMode_t get_activation_mode(taso::ActiMode activation);
 #endif

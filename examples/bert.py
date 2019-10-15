@@ -1,4 +1,4 @@
-import xflow as xf
+import taso as ts
 
 seq_length = 64
 hidden_dims = 1024
@@ -34,11 +34,11 @@ def attention(graph, input, heads):
     output = graph.matmul(input, linear)
     return output
 
-graph = xf.new_graph()
+graph = ts.new_graph()
 input = graph.new_input(dims=(seq_length, hidden_dims))
 input = graph.relu(input)
 t = input
 for i in range(8):
     t = attention(graph, t, 16)
 
-new_graph = xf.optimize(graph, alpha=1.0, budget=100)
+new_graph = ts.optimize(graph, alpha=1.0, budget=100)

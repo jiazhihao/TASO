@@ -106,14 +106,14 @@ Concat::Concat(Model* _model, int _axis, int n, Tensor* _inputs, bool* _needCopy
 Concat::~Concat(void)
 {}
 
-bool Concat::get_parameter(PMParameter para, int* value)
+bool Concat::get_int_parameter(PMParameter para, int* value)
 {
   switch (para) {
     case PM_AXIS:
       *value = axis;
       return true;
     default:
-      return OpBase::get_parameter(para, value);
+      return OpBase::get_int_parameter(para, value);
   }
 }
 

@@ -137,14 +137,14 @@ Split::Split(Model* _model, Tensor _input, int _axis, int n, int* _sizes)
 Split::~Split(void)
 {}
 
-bool Split::get_parameter(PMParameter para, int* value)
+bool Split::get_int_parameter(PMParameter para, int* value)
 {
   switch (para) {
     case PM_AXIS:
       *value = axis;
       return true;
     default:
-      return OpBase::get_parameter(para, value);
+      return OpBase::get_int_parameter(para, value);
   }
 }
 

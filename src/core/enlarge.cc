@@ -84,7 +84,7 @@ Enlarge::Enlarge(Model* _model, Tensor _w1, Tensor _w2)
 Enlarge::~Enlarge(void)
 {}
 
-bool Enlarge::get_parameter(PMParameter para, int* value)
+bool Enlarge::get_int_parameter(PMParameter para, int* value)
 {
   switch (para) {
     //case PM_KERNEL_H:
@@ -94,7 +94,7 @@ bool Enlarge::get_parameter(PMParameter para, int* value)
     //  *value = kernelW;
     //  return true;
     default:
-      return OpBase::get_parameter(para, value);
+      return OpBase::get_int_parameter(para, value);
   }
 }
 

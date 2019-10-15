@@ -108,14 +108,14 @@ Matmul::Matmul(Model* _model, Tensor _input, Tensor _weight, ActiMode _activatio
 Matmul::~Matmul(void)
 {}
 
-bool Matmul::get_parameter(PMParameter para, int* value)
+bool Matmul::get_int_parameter(PMParameter para, int* value)
 {
   switch (para) {
     case PM_ACTI:
       *value = (int) activation;
       return true;
     default:
-      return OpBase::get_parameter(para, value);
+      return OpBase::get_int_parameter(para, value);
   }
 }
 

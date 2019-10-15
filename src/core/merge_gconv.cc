@@ -83,14 +83,14 @@ MergeGConv::MergeGConv(Model* _model,
 MergeGConv::~MergeGConv(void)
 {}
 
-bool MergeGConv::get_parameter(PMParameter para, int* value)
+bool MergeGConv::get_int_parameter(PMParameter para, int* value)
 {
   switch (para) {
     case PM_MERGE_GCONV_COUNT:
       *value = count;
       return true;
     default:
-      return OpBase::get_parameter(para, value);
+      return OpBase::get_int_parameter(para, value);
   }
 }
 

@@ -20,10 +20,14 @@ using namespace taso;
 void Element::map(void)
 {
   // create descriptors
-  checkCUDNN(cudnnCreateTensorDescriptor(&inputTensor));
+  checkCUDNN(cudnnCreateTensorDescriptor(&in1Tensor));
+  checkCUDNN(cudnnCreateTensorDescriptor(&in2Tensor));
+  checkCUDNN(cudnnCreateTensorDescriptor(&outTensor));
   checkCUDNN(cudnnCreateOpTensorDescriptor(&opDesc));
   // set descriptors
-  helperSetTensorDescriptor(inputs[0], inputTensor);
+  helperSetBroadcastableTensorDescriptor(inputs[0], outputs[0], in1Tensor);
+  helperSetBroadcastableTensorDescriptor(inputs[1], outputs[0], in2Tensor);
+  helperSetTensorDescriptor(outputs[0], outTensor);
 
   cudnnOpTensorOp_t opType;
   switch (type) {
@@ -47,7 +51,9 @@ void Element::map(void)
 
 void Element::unmap(void)
 {
-  checkCUDNN(cudnnDestroyTensorDescriptor(inputTensor));
+  checkCUDNN(cudnnDestroyTensorDescriptor(in1Tensor));
+  checkCUDNN(cudnnDestroyTensorDescriptor(in2Tensor));
+  checkCUDNN(cudnnDestroyTensorDescriptor(outTensor));
   checkCUDNN(cudnnDestroyOpTensorDescriptor(opDesc));
   checkCUDA(cudaFree(outputs[0].data_ptr));
 }
@@ -56,8 +62,8 @@ void Element::forward(bool block)
 {
   const float alpha = 1.0f;
   const float beta = 0.0f;
-  checkCUDNN(cudnnOpTensor(model->dnn, opDesc, &alpha, inputTensor, inputs[0].data_ptr,
-      &alpha, inputTensor, inputs[1].data_ptr, &beta, inputTensor, outputs[0].data_ptr));
+  checkCUDNN(cudnnOpTensor(model->dnn, opDesc, &alpha, in1Tensor, inputs[0].data_ptr,
+      &alpha, in2Tensor, inputs[1].data_ptr, &beta, outTensor, outputs[0].data_ptr));
   if (block)
     checkCUDA(cudaDeviceSynchronize());
 }
@@ -66,7 +72,11 @@ void Model::measure_element_cost(Element* ele)
 {
   const float alpha = 1.0f;
   const float beta = 0.0f;
-  helperSetTensorDescriptor(ele->inputs[0], inputTensor);
+  helperSetBroadcastableTensorDescriptor(ele->inputs[0],
+      ele->outputs[0], inputTensor);
+  helperSetBroadcastableTensorDescriptor(ele->inputs[1],
+      ele->outputs[0], biasTensor);
+  helperSetTensorDescriptor(ele->outputs[0], outputTensor);
   //int inputN = ele->inputs[0].dim[0];
   //int inputC = max(ele->inputs[0].dim[1], 1);
   //int inputH = max(ele->inputs[0].dim[2], 1);
@@ -92,7 +102,7 @@ void Model::measure_element_cost(Element* ele)
   checkCUDA(cudaEventRecord(startEvent));
   for (int i = 0; i < REPEAT_TIMES; i++) {
     checkCUDNN(cudnnOpTensor(dnn, opDesc, &alpha, inputTensor, inputPtr,
-        &alpha, inputTensor, filterPtr, &beta, inputTensor, outputPtr));
+        &alpha, biasTensor, filterPtr, &beta, outputTensor, outputPtr));
   }
   checkCUDA(cudaEventRecord(endEvent));
   checkCUDA(cudaEventSynchronize(endEvent));

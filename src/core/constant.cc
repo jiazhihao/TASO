@@ -64,9 +64,9 @@ Constant::Constant(Model* _model, int ndim, int* dims, OpType _type)
 Constant::~Constant(void)
 {}
 
-bool Constant::get_parameter(PMParameter para, int* value)
+bool Constant::get_int_parameter(PMParameter para, int* value)
 {
-  return OpBase::get_parameter(para, value);
+  return OpBase::get_int_parameter(para, value);
 }
 
 void Constant::collect_costs(float& exe_time, float& flops,

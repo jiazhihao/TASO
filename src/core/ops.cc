@@ -79,7 +79,8 @@ OpBase::OpBase(Model* _model, OpType _type)
   }
 }
 
-OpBase::OpBase(Tensor _input, Model* _model, OpType _type)
+OpBase::OpBase(const Tensor& _input,
+               Model* _model, OpType _type)
 : numInputs(1), model(_model), type(_type), runtime(0.0f)
 {
   inputs[0] = _input;
@@ -90,7 +91,9 @@ OpBase::OpBase(Tensor _input, Model* _model, OpType _type)
   }
 }
 
-OpBase::OpBase(Tensor _input0, Tensor _input1, Model* _model, OpType _type)
+OpBase::OpBase(const Tensor& _input0,
+               const Tensor& _input1,
+               Model* _model, OpType _type)
 : numInputs(2), model(_model), type(_type), runtime(0.0f)
 {
   inputs[0] = _input0;
@@ -102,8 +105,28 @@ OpBase::OpBase(Tensor _input0, Tensor _input1, Model* _model, OpType _type)
   }
 }
 
-OpBase::OpBase(Tensor _input0, Tensor _input1, Tensor _input2, Tensor _input3,
-               Tensor _input4, Model* _model, OpType _type)
+OpBase::OpBase(const Tensor& _input0,
+               const Tensor& _input1,
+               const Tensor& _input2,
+               Model* _model, OpType _type)
+: numInputs(3), model(_model), type(_type), runtime(0.0f)
+{
+  inputs[0] = _input0;
+  inputs[1] = _input1;
+  inputs[2] = _input2;
+  for (int i = 0; i < MAX_NUM_OUTPUTS; i++) {
+    outputs[i].numDim = 0;
+    for (int j = 0; j < MAX_DIM; j++)
+      outputs[i].dim[j] = 0;
+  }
+}
+
+OpBase::OpBase(const Tensor& _input0,
+               const Tensor& _input1,
+               const Tensor& _input2,
+               const Tensor& _input3,
+               const Tensor& _input4,
+               Model* _model, OpType _type)
 : numInputs(5), model(_model), type(_type), runtime(0.0f)
 {
   inputs[0] = _input0;
@@ -131,7 +154,7 @@ OpBase::OpBase(int n, Tensor* _inputs, Model* _model, OpType _type)
   }
 }
 
-bool OpBase::get_parameter(PMParameter para, int* value)
+bool OpBase::get_int_parameter(PMParameter para, int* value)
 {
   switch (para) {
     case PM_OP_TYPE:
@@ -273,7 +296,7 @@ Graph* Graph::optimize(float alpha, int budget)
   Graph *bestGraph = this;
   float bestCost = total_cost();
   //printf("MetaFlow Cost = %.4lfms\n", bestCost);
-  printf("MetaFlow w/ cuDNN: end-to-end inference time =\n"
+  printf("Input graph: end-to-end execution time =\n"
          "%.8lf ms (average of 100 runs)\n", run());
   print_costs();
 
@@ -295,7 +318,7 @@ Graph* Graph::optimize(float alpha, int budget)
       // TODO: free all remaining candidates when budget exhausted 
       break;
     }
-    if (counter % 10 == 0) {
+    if (counter % 1 == 0) {
       printf("        [%d] cost = %.4lf bestCost = %.4lf candidates.size() = %zu\n", counter, subGraph->total_cost(), bestCost, candidates.size());
       //timer_fs << microsecond_timer() - start_time << ", " << bestCost << std::endl;
     }
@@ -316,7 +339,7 @@ Graph* Graph::optimize(float alpha, int budget)
   bestGraph = bestGraph->preprocess_weights();
   printf("        ===== Finish Cost-Based Backtracking Search =====\n\n");
   //printf("bestCost = %.4lf\n", bestGraph->total_cost());
-  printf("XFlow w/ cuDNN: end-to-end inference time =\n");
+  printf("Optimized graph: end-to-end execution time =\n");
   printf("%.8lf ms (average of 100 runs)\n", bestGraph->run());
   bestGraph->print_costs();
 
@@ -496,7 +519,7 @@ int Graph::get_operator_int_attr(size_t guid, PMParameter attr)
 {
   Op op = find_op_or_fail(guid);
   int ret;
-  assert(op.ptr->get_parameter(attr, &ret));
+  assert(op.ptr->get_int_parameter(attr, &ret));
   return ret;
 }
 
