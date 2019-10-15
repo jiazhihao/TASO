@@ -8,7 +8,6 @@ TASO employs a cost-based search algorithm to explore the space, and automatical
 
 ### Prerequisties
 
-* Recent C++ compiler supporting C++11
 * CMAKE 3.2 or higher
 * ProtocolBuffer 3.6.1 or higher
 * Cython 0.28 or higher
