@@ -1,7 +1,7 @@
 # TASO Installation
 
 TASO can be built from source code using the following instructions.
-We also provide prebuilt TAOS docker images with all dependencies preinstalled.
+We also provide prebuilt TASO docker images with all dependencies preinstalled.
 
 ## Install from Source
 
