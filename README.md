@@ -1,44 +1,28 @@
 # TASO: A Tensor Algebra SuperOptimizer for Deep Learning
 
 TASO optimizes the computation graphs of DNN models using automatically generated and verified graph transformations.
-For a given DNN model, the transformations build a large search space of potential computation graphs.
-TASO employs a cost-based search algorithm to explore the space, and automatically discovers an optimized computation graph.
+For an arbitrary DNN model, these auto-generated graph transformations construct a large search space of potential computation graphs that are equivalent to the original one.
+TASO employs a cost-based search algorithm to explore the space, and automatically discovers a highly optimized computation graph.
+TASO outperforms the graph optimizers in existing deep learning frameworks [by up to 2.8x](http://theory.stanford.edu/~aiken/publications/papers/sosp19.pdf).
+<div align="center">
+  <img src="https://github.com/jiazhihao/TASO/blob/master/figures/inference.png">
+  End-to-end inference performance comparison on a NVIDIA V100 GPU.
+</div>
 
-## Installation
+## Install TASO
 
-### Prerequisties
+See [instructions](https://github.com/jiazhihao/TASO/blob/master/INSTALL.md) to install TASO from source.
+We also provide prebuilt [docker images](https://github.com/jiazhihao/TASO/blob/master/INSTALL.md) with all dependencies pre-installed.
 
-* CMAKE 3.2 or higher
-* ProtocolBuffer 3.6.1 or higher
-* Cython 0.28 or higher
-* ONNX 1.5 or higher
-* CUDA 9.0 or higher and CUDNN 7.0 or higher
+## Using TASO
 
-### Install from Source
+TASO can directly optimize any pre-trained DNN models in [ONNX](https://onnx.ai), [TensorFlow](https://www.tensorflow.org/guide/saved_model), and [PyTorch](https://pytorch.org/docs/stable/onnx.html) graph formats.
+TASO also provides a Python interface that supports optimizing arbitrary DNN architectures.
+TASO supports exporting the optimized computation graphs to ONNX, which can be directly used as inputs by most existing deep learning frameworks.
 
-* To get started, clone the TASO source code from github.
-```
-git clone https://www.github.com/jiazhihao/taso
-cd taso
-```
+### Optimize ONNX Models
 
-* Build the TASO runtime library. The configuration of the TASO runtime can be modified by `config.cmake`. The default configuration builds the CUDA backend and automatically finds the CUDA libraries (e.g., cuDNN, cuBLAS). You can manually choose a CUDA path by changing `set(USE_CUDA ON)` to `set(USE_CUDA /path/to/cuda/library`). MKL support is coming soon.
-```
-mkdir build; cd build; cmake ..
-sudo make install -j 4
-```
-
-* Install the TASO python package.
-```
-cd python
-python setup.py install
-```
-
-## Using TASO 
-
-### Optimize Pre-trained ONNX Models
-
-TASO can be used to optimize pre-trained DNN models in the [ONNX](https://onnx.ai/) format, and this can be done in just a few lines of Python code.
+TASO can directly optimize pre-trained ONNX models, and this can be done in just a few lines of Python code.
 The following code snippet shows how to load a pre-trained DNN model from ONNX, optimize the model, and save the optimized model into a ONNX file.
 ```python
 import taso
@@ -50,15 +34,35 @@ new_model = taso.export_onnx(taso_graph)
 onnx.save(new_model, "/path/to/save/new/onnx/model")
 ```
 The optimized model has the same accuracy as the original and can be directly used by existing deep learning frameworks.
-The following figure shows the end-to-end inference performance comparison on a NVIDIA V100 GPU.
+<!-- The following figure shows the end-to-end inference performance comparison on a NVIDIA V100 GPU. -->
 The original and TASO-optimized ONNX files are available in the `onnx` folder.
-<div align="center">
-  <img src="https://github.com/jiazhihao/TASO/blob/master/figures/inference.png">
-</div>
 
-### Optimizing DNN Models using the Python Interface
+### Optimize TensorFlow Models
 
-TASO can also optimize arbitrary DNN models using the Python interface. 
+TASO can also optimize TensorFlow models by converting the TensorFlow model to the ONNX format using [tf2onnx](https://github.com/onnx/tensorflow-onnx).
+
+* First, install `tf2onnx` from PyPi or [from source](https://github.com/onnx/tensorflow-onnx).
+```
+pip install -U tf2onnx
+```
+
+* Second, convert a TensorFlow model to the ONNX format using `tf2onnx`.
+```
+python -m tf2onnx.convert \
+       --saved-model /path/to/tensorflow/saved/model \
+       --output /path/to/onnx/model/file
+```
+
+* Third, use TASO to optimize the model in the ONNX format by following the above instructions.
+
+### Optimize PyTorch Models
+
+PyTorch has built-in support for ONNX as a part of the [torch.onnx](https://pytorch.org/docs/master/onnx.html) package.
+TASO can directly optimize PyTorch models in the ONNX format.
+
+### Optimize DNN Models using the Python Interface
+
+TASO can also optimize arbitrary DNN architecture using the TASO Python interface. 
 The following code snippet builds the left-most DNN graph depicted in the figure. TASO automatically performs a series of non-trivial transformations, and eventually discovers the right-most DNN graph, which is 1.3x faster on a V100 GPU. More DNN examples are available in the `examples` folder.
 
 <div align="center">
