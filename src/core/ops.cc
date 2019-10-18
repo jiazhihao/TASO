@@ -281,7 +281,14 @@ Graph* Graph::optimize(float alpha, int budget)
   //xfers.push_back(create_avg_pool_conv(model));
   //xfers.push_back(create_two_pools(model));
   //xfers.push_back(create_merge_seperable_convs(model));
-  GraphXfer::load_graph_xfer_from_pb_file(model, xfers, "graph_subst.pb");
+  char* taso_path = getenv("TASO_HOME");
+  if (taso_path == NULL) {
+    fprintf(stderr, "Error: environment variable TASO_HOME is not set. "
+           "Please set TASO_HOME to the home directory of TASO source code.\n");
+    assert(false);
+  }
+  std::string graph_subst_file = std::string(taso_path) + "/graph_subst.pb";
+  GraphXfer::load_graph_xfer_from_pb_file(model, xfers, graph_subst_file);
   //xfers.push_back(create_fuse_conv_batch_xfer(model));
   //xfers.push_back(create_fuse_conv_relu_xfer(model));
   //xfers.push_back(create_merge_conv_xfer(model));
