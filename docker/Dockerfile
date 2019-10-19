@@ -37,6 +37,7 @@ RUN /opt/conda/bin/conda install -c conda-forge protobuf=3.9 numpy onnx
 RUN /opt/conda/bin/conda install -c anaconda cython
 
 ENV PATH /opt/conda/bin:$PATH
+ENV TASO_HOME /usr/TASO/
 
 COPY install_taso.sh /install/install_taso.sh
 RUN bash /install/install_taso.sh
