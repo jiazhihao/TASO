@@ -76,7 +76,7 @@ void BatchNorm::forward(bool block)
   const float alpha = 1.0f;
   const float beta = 0.0f;
   cudnnBatchNormMode_t mode = CUDNN_BATCHNORM_SPATIAL;
-  int inputC = inputs[0].dim[1];
+  //int inputC = inputs[0].dim[1];
 #ifdef DO_TRAINING 
   if (model->isTraining) {
     assign_kernel<<<GET_BLOCKS(inputC), CUDA_NUM_THREADS>>>(

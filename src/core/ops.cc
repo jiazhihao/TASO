@@ -281,7 +281,14 @@ Graph* Graph::optimize(float alpha, int budget)
   //xfers.push_back(create_avg_pool_conv(model));
   //xfers.push_back(create_two_pools(model));
   //xfers.push_back(create_merge_seperable_convs(model));
-  GraphXfer::load_graph_xfer_from_pb_file(model, xfers, "graph_subst.pb");
+  char* taso_path = getenv("TASO_HOME");
+  if (taso_path == NULL) {
+    printf(stderr, "Error: environment variable TASO_HOME is not set. "
+          "Please set TASO_HOME to the root directory of TASO source code.\n");
+    assert(false);
+  }
+  std::string graph_subst_file = std::string(taso_path) + "/graph_subst.pb";
+  GraphXfer::load_graph_xfer_from_pb_file(model, xfers, graph_subst_file);
   //xfers.push_back(create_fuse_conv_batch_xfer(model));
   //xfers.push_back(create_fuse_conv_relu_xfer(model));
   //xfers.push_back(create_merge_conv_xfer(model));
@@ -796,7 +803,7 @@ void Graph::export_op(ofstream &file_stream, Op &op)
     }
     case OP_RESHAPE:
     {
-      Reshape *reshape = (Reshape*) op.ptr;
+      //Reshape *reshape = (Reshape*) op.ptr;
       Tensor t = op.ptr->outputs[0];
       for (int i = 0; i < t.numDim; i++)
       {
@@ -813,9 +820,10 @@ void Graph::export_op(ofstream &file_stream, Op &op)
       Transpose *transpose = (Transpose*) op.ptr;
       Tensor t = op.ptr->outputs[0];
       int permIdx = transpose->permIdx;
-      int ndim = t.numDim, permArray[MAX_DIM];
+      int ndim = t.numDim;
+      //int permArray[MAX_DIM];
       for (int i = ndim - 1; i >= 0; i--) {
-        permArray[i] = permIdx % ndim;
+        //permArray[i] = permIdx % ndim;
         permIdx = permIdx / ndim;
       }
       assert(permIdx == 0);
@@ -874,7 +882,7 @@ void Graph::print(void)
   std::map<Op, std::set<Edge, EdgeCompare>, OpCompare>::const_iterator it;
   for (it = inEdges.begin(); it != inEdges.end(); it++) {
     if (it->first.guid == 0) continue;
-    printf("	guid(%zu) type(%d) runtime(%.4lf) op_ptr(%x): ", it->first.guid, it->first.ptr->type, it->first.ptr->runtime, it->first.ptr);
+    printf("	guid(%zu) type(%d) runtime(%.4lf): ", it->first.guid, it->first.ptr->type, it->first.ptr->runtime);
     std::set<Edge, EdgeCompare> list = it->second;
     std::set<Edge, EdgeCompare>::const_iterator it2;
     for (it2 = list.begin(); it2 != list.end(); it2++) {
@@ -986,7 +994,7 @@ float Graph::run(void)
     Tensor inputs[MAX_NUM_INPUTS];
     if ((op.ptr->type == OP_INPUT) || (op.ptr->type == OP_WEIGHT)) {
       assert(inList.size() == 1);
-      Edge e = *inList.begin();
+      //Edge e = *inList.begin();
       //assert(e.srcOp.ptr == NULL); // NoOp's input must not be any Op
       Tensor t = op.ptr->inputs[0];
       size_t size = sizeof(DATATYPE);

@@ -20,7 +20,7 @@ int permutation_to_index(const std::vector<int>& perm)
 {
   // check perm
   for (size_t i = 0; i < perm.size(); i++) {
-    assert(perm[i] >= 0 && perm[i] < perm.size());
+    assert(perm[i] >= 0 && perm[i] < (int)perm.size());
     for (size_t j = i + 1; j < perm.size(); j++)
       assert(perm[i] != perm[j]);
   }
@@ -91,11 +91,11 @@ Transpose::Transpose(Model* _model, Tensor _input,
 {
   assert(shuffle);
   permIdx = permutation_to_index(_perm);
-  assert(_input.numDim == _perm.size());
+  assert(_input.numDim == (int)_perm.size());
   numOutputs = 1;
   // set dims and strides
   outputs[0].numDim = _input.numDim;
-  for (int i = 0; i < _perm.size(); i++) {
+  for (size_t i = 0; i < _perm.size(); i++) {
     outputs[0].dim[i] = _input.dim[_perm[i]];
     outputs[0].split[i] = _input.split[_perm[i]];
   }
@@ -107,7 +107,7 @@ Transpose::Transpose(Model* _model, Tensor _input,
     }
     assert(size == outputs[0].volume());
   } else {
-    for (int i = 0; i < _perm.size(); i++)
+    for (size_t i = 0; i < _perm.size(); i++)
       outputs[0].stride[i] = _input.stride[_perm[i]];
   }
   outputs[0].idx = 0;
