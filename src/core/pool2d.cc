@@ -130,7 +130,7 @@ Pool2D::Pool2D(Model* _model, Tensor _input,
 {
   assert(type == OP_POOL2D_MAX || type == OP_POOL2D_AVG);
   assert(_input.numDim == 4);
-  int inputC = _input.dim[1];
+  //int inputC = _input.dim[1];
   int inputH = _input.dim[2];
   int inputW = _input.dim[3];
   int outputH, outputW;
