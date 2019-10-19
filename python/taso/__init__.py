@@ -176,13 +176,13 @@ def _matmul(op, graph, tensors, initializer):
 def _min(op, graph, tensors, initializer):
     inputs = _get_inputs(op, tensors)
     assert len(inputs) == 2, "Min takes exactly two inputs"
-    outputs = graph.min(inputs[0], inputs[1])
+    outputs = graph.min(x=inputs[0], y=inputs[1])
     return outputs
 
 def _mul(op, graph, tensors, initializer):
     inputs = _get_inputs(op, tensors)
     assert len(inputs) == 2, "Mul takes exactly two inputs"
-    outputs = graph.mul(inputs[0], inputs[1])
+    outputs = graph.mul(x=inputs[0], y=inputs[1])
     return outputs
 
 def _pad(op, graph, tensors, initializer):
@@ -419,7 +419,7 @@ def new_graph(print_measurements = False):
         graph.print_measurements()
     return graph
 
-def load(filename):
+def load_onnx(filename):
     '''
     Load a onnx file and return a Graph
 
