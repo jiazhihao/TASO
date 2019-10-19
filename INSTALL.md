@@ -20,6 +20,10 @@ We also provide prebuilt TASO docker images with all dependencies preinstalled.
 git clone --recursive https://www.github.com/jiazhihao/taso
 cd taso
 ```
+The `TASO_HOME` environment is used for building and running TASO. You can add the following line in `~/.bashrc`.
+```
+export TASO_HOME=/path/to/taso
+```
 
 * Build the TASO runtime library. The configuration of the TASO runtime can be modified by `config.cmake`. The default configuration builds the CUDA backend and automatically finds the CUDA libraries (e.g., cuDNN, cuBLAS). You can manually choose a CUDA path by changing `set(USE_CUDA ON)` to `set(USE_CUDA /path/to/cuda/library`). MKL support is coming soon.
 ```

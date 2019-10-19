@@ -283,8 +283,8 @@ Graph* Graph::optimize(float alpha, int budget)
   //xfers.push_back(create_merge_seperable_convs(model));
   char* taso_path = getenv("TASO_HOME");
   if (taso_path == NULL) {
-    printf(stderr, "Error: environment variable TASO_HOME is not set. "
-          "Please set TASO_HOME to the root directory of TASO source code.\n");
+    fprintf(stderr, "Error: environment variable TASO_HOME is not set. "
+           "Please set TASO_HOME to the home directory of TASO source code.\n");
     assert(false);
   }
   std::string graph_subst_file = std::string(taso_path) + "/graph_subst.pb";
