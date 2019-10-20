@@ -50,7 +50,7 @@ namespace taso {
 #define MAX_NUM_INPUTS 6
 #define MAX_NUM_OUTPUTS 6
 #define BATCH_SIZE 1
-#define MAX_TENSOR_SIZE 1024 * 1024 * 1024 // 1024MB
+#define MAX_TENSOR_SIZE 512 * 1024 * 1024 // 512MB
 #define REPEAT_TIMES 32
 #define WARMUP_TIMES 8
 const size_t WORK_SPACE_SIZE = (size_t)2 * 1024 * 1024 * 1024; // 2GB
