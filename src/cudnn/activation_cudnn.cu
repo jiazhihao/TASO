@@ -26,6 +26,7 @@ void Activation::map(void)
   cudnnActivationMode_t mode;
   switch (type) {
     case OP_RELU:
+    case OP_LEAKYRELU:
       mode = CUDNN_ACTIVATION_RELU;
       break;
     case OP_SIGMOID:
@@ -77,6 +78,7 @@ void Model::measure_activation_cost(Activation* act)
   cudnnActivationMode_t mode;
   switch (act->type) {
     case OP_RELU:
+    case OP_LEAKYRELU:
       mode = CUDNN_ACTIVATION_RELU;
       break;
     case OP_SIGMOID:

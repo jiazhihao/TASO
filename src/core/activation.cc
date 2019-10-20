@@ -16,6 +16,16 @@
 #include "taso/ops.h"
 using namespace taso;
 
+TensorHandle Graph::leakyrelu(const TensorHandle _input, float alpha, bool _inPlace)
+{
+  Op op = model->get_or_create_activation(*_input, OP_LEAKYRELU, _inPlace);
+  assert(op != Op::INVALID_OP);
+  add_edge(_input->op, op, _input->idx, 0);
+  TensorHandle t = new Tensor(op.ptr->outputs[0]);
+  t->op = op;
+  return t;
+}
+
 TensorHandle Graph::relu(const TensorHandle _input, bool _inPlace)
 {
   Op op = model->get_or_create_activation(*_input, OP_RELU, _inPlace);

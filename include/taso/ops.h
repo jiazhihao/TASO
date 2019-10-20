@@ -45,7 +45,7 @@ using namespace std;
 
 namespace taso {
 
-#define MAX_DIM 4
+#define MAX_DIM 8
 #define MAX_NUM_SPLITS 32
 #define MAX_NUM_INPUTS 6
 #define MAX_NUM_OUTPUTS 6
@@ -401,6 +401,7 @@ enum OpType {
   OP_LOG, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Log
   OP_LOGICAL_NOT, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Not
   OP_SQRT, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Sqrt
+  OP_LEAKYRELU,
 };
 
 //That this must be consistent with python/taso/_cython/CCore.pxd
@@ -506,6 +507,8 @@ public:
   TensorHandle fc(const TensorHandle _input,
                   int _outputC,
                   ActiMode _actiMode = AC_MODE_NONE);
+  TensorHandle leakyrelu(const TensorHandle _input, float _alpha,
+                         bool _inplace=true);
   TensorHandle log(const TensorHandle _input);
   TensorHandle logical_not(const TensorHandle _input);
   TensorHandle matmul(const TensorHandle _input,

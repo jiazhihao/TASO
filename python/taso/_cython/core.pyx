@@ -198,6 +198,11 @@ cdef class PyGraph:
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
+    def leakyrelu(self, PyTensor input, float alpha, bool inplace = False):
+        cdef TensorHandle handle = self.p_graph.leakyrelu(input.ctensor, alpha, inplace)
+        t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
+        return PyTensor(t)
+
     def less(self, *, PyTensor x, PyTensor y):
         cdef TensorHandle handle = self.p_graph.element(OP_EW_LESS, x.ctensor, y.ctensor)
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
@@ -349,6 +354,15 @@ cdef class PyGraph:
 
     def sqrt(self, *, PyTensor input):
         cdef TensorHandle handle = self.p_graph.sqrt(input.ctensor)
+        t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
+        return PyTensor(t)
+
+    def squeeze(self, *, PyTensor input, tuple axes):
+        cdef vector[int] caxes
+        caxes.resize(len(axes))
+        for i in range(len(axes)):
+            caxes[i] = axes[i]
+        cdef TensorHandle handle = self.p_graph.squeeze(input.ctensor, caxes)
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 

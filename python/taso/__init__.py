@@ -21,6 +21,31 @@ def _parse_attribute(attributes):
             assert False, "Unsupported Attribute Type: {}".format(att.type)
     return atts
 
+def _get_conv_pool_pads_attr(attrs):
+    if ("auto_pad" in attrs):
+        padding = attrs["auto_pad"]
+        if isinstance(padding, bytes):
+            padding = padding.decode()
+        if (padding=='SAME_LOWER') or (padding=='SAME_UPPER'):
+            pads = "SAME"
+        elif (padding=='VALID'):
+            pads = "VALID"
+        else:
+            assert padding=='NOTSET', "Unrecogonized auto_pad value: {}".format(padding)
+        # Note that we always think conv1x1 has SAME padding
+        # This will allow fusing enlarged convs
+        if sum(attrs['kernel_shape']) <= 2:
+            pads = "SAME"
+        if padding != 'NOTSET':
+            return pads
+    # Note that we always think conv1x1 has SAME padding
+    # This will allow fusing enlarged convs
+    if sum(attrs["pads"]) == 0 and sum(attrs['kernel_shape']) > 2:
+        pads = "VALID"
+    else:
+        pads = "SAME"
+    return pads
+
 def _get_inputs(op, tensors):
     inputs = list()
     for i in op.input:
@@ -88,12 +113,7 @@ def _conv2d(op, graph, tensors, initializer):
         group = 1 # default 1
     else:
         group = attrs["group"]
-    # Note that we always think conv1x1 has SAME padding
-    # This will allow fusing enlarged convs
-    if sum(attrs["pads"]) == 0 and sum(attrs['kernel_shape']) > 2:
-        pads = "VALID"
-    else:
-        pads = "SAME"
+    pads = _get_conv_pool_pads_attr(attrs)
     strides = attrs["strides"]
     outputs = graph.conv2d(input=inputs[0], weight=inputs[1], strides=strides, padding=pads)
     return outputs
@@ -145,6 +165,14 @@ def _identity(op, graph, tensors, initializer):
     inputs = _get_inputs(op, tensors)
     assert len(inputs) == 1, "Identity takes exactly one input"
     outputs = graph.dropout(inputs[0], 0.0)
+    return outputs
+
+def _leakyrelu(op, graph, tensors, initializer):
+    assert len(op.input) == 1, "LeakyRelu requires exactly one input"
+    assert op.input[0] in tensors
+    attrs = _parse_attribute(op.attribute)
+    alpha = attrs["alpha"]
+    outputs = graph.leakyrelu(input=tensors[op.input[0]], alpha=alpha)
     return outputs
 
 def _less(op, graph, tensors, initializer):
@@ -204,10 +232,7 @@ def _maxpool2d(op, graph, tensors, initializer):
     attrs = _parse_attribute(op.attribute)
     kernels = attrs["kernel_shape"]
     strides = attrs["strides"]
-    if sum(attrs["pads"]) == 0:
-        pads = "VALID"
-    else:
-        pads = "SAME"
+    pads = _get_conv_pool_pads_attr(attrs)
     outputs = graph.maxpool2d(input=tensors[op.input[0]], kernels=kernels, strides=strides, padding=pads)
     return outputs
 
@@ -217,10 +242,7 @@ def _avgpool2d(op, graph, tensors, initializer):
     attrs = _parse_attribute(op.attribute)
     kernels = attrs["kernel_shape"]
     strides = attrs["strides"]
-    if sum(attrs["pads"]) == 0:
-        pads = "VALID"
-    else:
-        pads = "SAME"
+    pads = _get_conv_pool_pads_attr(attrs)
     outputs = graph.avgpool2d(input=tensors[op.input[0]], kernels=kernels, strides=strides, padding=pads)
     return outputs
 
@@ -342,10 +364,21 @@ def _sqrt(op, graph, tensors, initializer):
     outputs = graph.sqrt(tensors[op.input[0]])
     return outputs
 
+def _squeeze(op, graph, tensors, initializer):
+    assert len(op.input) == 1, "Squeeze takes exactly one input"
+    assert op.input[0] in tensors
+    attrs = _parse_attribute(op.attribute)
+    axes_ints = attrs["axes"]
+    axes = list()
+    for i in axes_ints:
+        axes.append(i)
+    outputs = graph.squeeze(input=tensors[op.input[0]], axes=tuple(axes))
+    return outputs
+
 def _sub(op, graph, tensors, initializer):
     inputs = _get_inputs(op, tensors)
-    assert len(inputs) == 2, "Mul takes exactly two inputs"
-    outputs = graph.sub(inputs[0], inputs[1])
+    assert len(inputs) == 2, "Sub takes exactly two inputs"
+    outputs = graph.sub(x=inputs[0], y=inputs[1])
     return outputs
 
 def _transpose(op, graph, tensors, initializer):
@@ -367,7 +400,7 @@ def _unsqueeze(op, graph, tensors, initializer):
     axes = list()
     for i in axes_ints:
         axes.append(i)
-    outputs = graph.unsqueeze(tensors[op.input[0]], axes)
+    outputs = graph.unsqueeze(input=tensors[op.input[0]], axes=tuple(axes))
     return outputs
 
 # Add all supported operators
@@ -387,6 +420,7 @@ xf_operators['Exp'] = _exp
 xf_operators['Gemm'] = _gemm
 xf_operators['Greater'] = _greater
 xf_operators['Identity'] = _identity
+xf_operators['LeakyRelu'] = _leakyrelu
 xf_operators['Less'] = _less
 xf_operators['Log'] = _log
 xf_operators['Pad'] = _pad
@@ -409,6 +443,7 @@ xf_operators['Shape'] = _shape
 xf_operators['Size'] = _size
 xf_operators['Split'] = _split
 xf_operators['Sqrt'] = _sqrt
+xf_operators['Squeeze'] = _squeeze
 xf_operators['Sub'] = _sub
 xf_operators['Transpose'] = _transpose
 xf_operators['Unsqueeze'] = _unsqueeze
@@ -444,7 +479,15 @@ def load_onnx(filename):
         if weight_data is None:
             tensors[t.name] = graph.new_input(dims=tuple(dims))
         else:
-            tensors[t.name] = graph.new_weight(dims=tuple(dims), data = weight_data)
+            tensors[t.name] = graph.new_weight(dims=tuple(dims), data=weight_data)
+
+    # Add initializers not in the inputs
+    for weight in model.graph.initializer:
+        if weight.name not in tensors:
+            if weight.dims:
+                dims = list(weight.dims)
+                weight_data = numpy_helper.to_array(weight)
+                tensors[weight.name] = graph.new_weight(dims=tuple(dims), data=weight_data)
 
     for op in model.graph.node:
         if op.op_type in xf_operators:

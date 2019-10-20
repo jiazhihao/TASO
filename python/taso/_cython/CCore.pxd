@@ -88,6 +88,7 @@ cdef extern from "taso/ops.h" namespace "taso":
         OP_LOG,
         OP_LOGICAL_NOT,
         OP_SQRT,
+        OP_LEAKYRELU,
 
     # This must be consistent with include/taso/ops.h
     cdef enum PMParameter:
@@ -220,6 +221,8 @@ cdef extern from "taso/ops.h" namespace "taso":
                                 bool keepdims)
         TensorHandle reshape(const TensorHandle input,
                              const vector[int] shape)
+        TensorHandle leakyrelu(const TensorHandle input,
+                               float alpha, bool _inplace)
         TensorHandle relu(const TensorHandle input,
                           bool _inplace)
         TensorHandle round(const TensorHandle input)
@@ -227,6 +230,8 @@ cdef extern from "taso/ops.h" namespace "taso":
         TensorHandle sigmoid(const TensorHandle input,
                             bool _inplace)
         TensorHandle sqrt(const TensorHandle input)
+        TensorHandle squeeze(const TensorHandle input,
+                              const vector[int] axes)
         TensorHandle tanh(const TensorHandle input,
                           bool _inplace)
         TensorHandle transpose(const TensorHandle input,
