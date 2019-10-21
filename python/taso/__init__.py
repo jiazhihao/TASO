@@ -361,7 +361,7 @@ def _sqrt(op, graph, tensors, initializer):
     assert len(op.input) == 1, "Sqrt requires exactly one input"
     assert op.input[0] in tensors
     attrs = _parse_attribute(op.attribute)
-    outputs = graph.sqrt(tensors[op.input[0]])
+    outputs = graph.sqrt(input=tensors[op.input[0]])
     return outputs
 
 def _squeeze(op, graph, tensors, initializer):
