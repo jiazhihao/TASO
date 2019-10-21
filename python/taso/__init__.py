@@ -121,7 +121,7 @@ def _conv2d(op, graph, tensors, initializer):
 def _div(op, graph, tensors, initializer):
     inputs = _get_inputs(op, tensors)
     assert len(inputs) == 2, "Div takes exactly two inputs"
-    outputs = graph.div(inputs[0], inputs[1])
+    outputs = graph.div(x=inputs[0], y=inputs[1])
     return outputs
 
 def _dropout(op, graph, tensors, initializer):
@@ -129,20 +129,20 @@ def _dropout(op, graph, tensors, initializer):
     assert len(inputs) == 1, "Dropout takes exactly one input"
     attrs = _parse_attribute(op.attribute)
     rate = attrs["ratio"]
-    outputs = graph.dropout(inputs[0], rate)
+    outputs = graph.dropout(input=inputs[0], rate=rate)
     return outputs
 
 def _equal(op, graph, tensors, initializer):
     inputs = _get_inputs(op, tensors)
     assert len(inputs) == 2, "Equal takes exactly two inputs"
-    outputs = graph.equal(inputs[0], inputs[1])
+    outputs = graph.equal(x=inputs[0], y=inputs[1])
     return outputs
 
 def _exp(op, graph, tensors, initializer):
     assert len(op.input) == 1, "Exp requires exactly one input"
     assert op.input[0] in tensors
     attrs = _parse_attribute(op.attribute)
-    outputs = graph.exp(tensors[op.input[0]])
+    outputs = graph.exp(input=tensors[op.input[0]])
     return outputs
 
 def _gemm(op, graph, tensors, initializer):
@@ -185,14 +185,14 @@ def _log(op, graph, tensors, initializer):
     assert len(op.input) == 1, "Log requires exactly one input"
     assert op.input[0] in tensors
     attrs = _parse_attribute(op.attribute)
-    outputs = graph.log(tensors[op.input[0]])
+    outputs = graph.log(input=tensors[op.input[0]])
     return outputs
 
 def _logical_not(op, graph, tensors, initializer):
     assert len(op.input) == 1, "Not requires exactly one input"
     assert op.input[0] in tensors
     attrs = _parse_attribute(op.attribute)
-    outputs = graph.logical_not(tensors[op.input[0]])
+    outputs = graph.logical_not(input=tensors[op.input[0]])
     return outputs
 
 def _matmul(op, graph, tensors, initializer):
@@ -321,7 +321,7 @@ def _relu(op, graph, tensors, initializer):
     assert len(op.input) == 1, "Relu requires exactly one input"
     assert op.input[0] in tensors
     attrs = _parse_attribute(op.attribute)
-    outputs = graph.relu(tensors[op.input[0]])
+    outputs = graph.relu(input=tensors[op.input[0]])
     return outputs
 
 def _round(op, graph, tensors, initializer):
@@ -361,7 +361,7 @@ def _sqrt(op, graph, tensors, initializer):
     assert len(op.input) == 1, "Sqrt requires exactly one input"
     assert op.input[0] in tensors
     attrs = _parse_attribute(op.attribute)
-    outputs = graph.sqrt(tensors[op.input[0]])
+    outputs = graph.sqrt(input=tensors[op.input[0]])
     return outputs
 
 def _squeeze(op, graph, tensors, initializer):
