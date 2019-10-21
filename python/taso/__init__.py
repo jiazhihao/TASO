@@ -185,14 +185,14 @@ def _log(op, graph, tensors, initializer):
     assert len(op.input) == 1, "Log requires exactly one input"
     assert op.input[0] in tensors
     attrs = _parse_attribute(op.attribute)
-    outputs = graph.log(tensors[op.input[0]])
+    outputs = graph.log(input=tensors[op.input[0]])
     return outputs
 
 def _logical_not(op, graph, tensors, initializer):
     assert len(op.input) == 1, "Not requires exactly one input"
     assert op.input[0] in tensors
     attrs = _parse_attribute(op.attribute)
-    outputs = graph.logical_not(tensors[op.input[0]])
+    outputs = graph.logical_not(input=tensors[op.input[0]])
     return outputs
 
 def _matmul(op, graph, tensors, initializer):
