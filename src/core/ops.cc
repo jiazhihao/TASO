@@ -241,12 +241,10 @@ TensorHandle Graph::new_input(int ndim, const int* dims)
 TensorHandle Graph::new_weight(int ndim, const int* dims, const DATATYPE* weight_initial)
 {
   DATATYPE* weight_ptr = NULL;
-  if (weight_initial != NULL) {
-    int total_size = sizeof(DATATYPE);
-    for (int i = 0; i < ndim; i++)
-      total_size *= dims[i];
-    weight_ptr = (DATATYPE*) model->allocate_memory(total_size, weight_initial);
-  }
+  int total_size = sizeof(DATATYPE);
+  for (int i = 0; i < ndim; i++)
+    total_size *= dims[i];
+  weight_ptr = (DATATYPE*) model->allocate_memory(total_size, weight_initial);
   TensorHandle t = new Tensor(ndim, dims, GUID_WEIGHT, weight_ptr);
   t = weight_wrapper(t);
   return t;
