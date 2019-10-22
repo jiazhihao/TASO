@@ -352,8 +352,14 @@ def _reshape(op, graph, tensors, initializer):
     for data in initializer:
         if data.name == op.input[1]:
             shape = list()
-            for dim in data.int64_data:
-                shape.append(dim)
+            if data.int64_data != []:
+                for dim in data.int64_data:
+                    shape.append(dim)
+            elif data.raw_data and data.raw_data != []:
+                shape_in_array = numpy_helper.to_array(data)
+                for dim in shape_in_array:
+                    shape.append(dim)
+
     outputs = graph.reshape(inputs[0], tuple(shape))
     return outputs
 
