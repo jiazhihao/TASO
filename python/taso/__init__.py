@@ -2,6 +2,46 @@ from .core import *
 import onnx
 from onnx import helper, TensorProto, numpy_helper
 
+# correspond to https://github.com/onnx/onnx/blob/master/onnx/onnx.proto
+def onnx_datatype_tostring(dtype):
+    if dtype == 0:
+        return 'UNDEFINED'
+    elif dtype == 1:
+        return 'FLOAT'
+    elif dtype == 2:
+        return 'UINT8'
+    elif dtype == 3:
+        return 'INT8'
+    elif dtype == 4:
+        return 'UINT16'
+    elif dtype == 5:
+        return 'INT16'
+    elif dtype == 6:
+        return 'INT32'
+    elif dtype == 7:
+        return 'INT64'
+    elif dtype == 8:
+        return 'STRING'
+    elif dtype == 9:
+        return 'BOOL'
+    elif dtype == 10:
+        return 'FLOAT16'
+    elif dtype == 11:
+        return 'DOUBLE'
+    elif dtype == 12:
+        return 'UINT32'
+    elif dtype == 13:
+        return 'UINT64'
+    elif dtype == 14:
+        return 'COMPLEX64'
+    elif dtype == 15:
+        return 'COMPLEX128'
+    elif dtype == 16:
+        return 'BFLOAT16'
+    else:
+        raise Exception('Unknown onnx datatype')
+
+
 def _check_output(taso_output, onnx_output):
     # TODO: check output match
     return True
