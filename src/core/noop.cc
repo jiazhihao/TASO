@@ -58,13 +58,15 @@ Op Model::create_input(Tensor _input, OpType _type)
 Op Model::create_weight(Tensor _weight, OpType _type)
 {
   assert(_type == OP_WEIGHT);
-  assert(_weight.data_ptr != NULL);
+  //assert(_weight.data_ptr != NULL);
+  if (_weight.data_ptr != NULL) {
+    fprintf(stderr, "[%s:%d] Warning: Find uninitialized weight tensor.\n", __FILE__, __LINE__);
+  }
   Op ret;
   ret.ptr = new NoOp(this, _weight, _type);
   ret.guid = global_unique_id ++;
   return ret;
 }
-
 
 Op Model::get_or_create_noop(Tensor _input, OpType _type)
 {
