@@ -59,7 +59,7 @@ Op Model::create_weight(Tensor _weight, OpType _type)
 {
   assert(_type == OP_WEIGHT);
   //assert(_weight.data_ptr != NULL);
-  if (_weight.data_ptr != NULL) {
+  if (_weight.data_ptr == NULL) {
     fprintf(stderr, "[%s:%d] Warning: Find uninitialized weight tensor.\n", __FILE__, __LINE__);
   }
   Op ret;
