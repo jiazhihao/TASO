@@ -389,6 +389,14 @@ def _reshape(op, graph, tensors, initializer):
     outputs = graph.reshape(inputs[0], tuple(shape))
     return outputs
 
+def _resize(op, graph, tensors, initializer):
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) >= 2, "Resize takes at least two inputs"
+    outputs = graph.resize(inputs[0], inputs[1])
+    return outputs
+
+# TensorFlow resize_nearest_neighbor
+# https://www.tensorflow.org/api_docs/cc/class/tensorflow/ops/resize-nearest-neighbor
 def _resize_nearest_neighbor(op, graph, tensors, initializer):
     inputs = _get_inputs(op, graph, tensors, initializer)
     assert len(inputs) == 2, "ResizeNearestNeighbor takes exactly two inputs"
@@ -399,10 +407,15 @@ def _resize_nearest_neighbor(op, graph, tensors, initializer):
                 shape.append(dim)
     assert len(shape) == 2, "ResizeNeareestNeighbor: new size cannot be statically inferred"
     outputs = graph.resize_nearest_neighbor(input=inputs[0], new_height=shape[0], new_width=shape[1])
+    return outputs
 
+# TensorFlow crop_and_resize
+# https://www.tensorflow.org/api_docs/cc/class/tensorflow/ops/crop-and-resize
 def _crop_and_resize(op, graph, tensors, initializer):
     inputs = _get_inputs(op, graph, tensors, initializer)
-
+    assert len(inputs) == 4, "CropAndResize takes exactly four inputs"
+    outputs = graph.crop_and_resize(inputs[0], inputs[1], inputs[2], inputs[3])
+    return outputs
 
 def _relu(op, graph, tensors, initializer):
     assert len(op.input) == 1, "Relu requires exactly one input"

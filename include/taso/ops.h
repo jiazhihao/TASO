@@ -403,6 +403,7 @@ enum OpType {
   OP_SQRT, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Sqrt
   OP_LEAKYRELU,
   OP_SLICE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Slice
+  OP_RESIZE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Resize
 };
 
 //That this must be consistent with python/taso/_cython/CCore.pxd
@@ -560,7 +561,9 @@ public:
   TensorHandle relu(const TensorHandle _input,
                     bool _inPlace = true);
   TensorHandle reshape(const TensorHandle _input,
-                       const std::vector<int>& shape);
+                       const std::vector<int>& _shape);
+  TensorHandle resize(const TensorHandle _input,
+                      const std::vector<int>& _shape);
   TensorHandle round(const TensorHandle _input);
   TensorHandle shape(const TensorHandle _input,
                      OpType _type);
@@ -914,6 +917,19 @@ public:
   void map(void);
   void unmap(void);
   void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
+};
+
+class Resize : public OpBase {
+public:
+  Resize(Model* _model, const Tensor& _input, const std::vector<int>& _shape);
+  ~Resize(void);
+  bool get_int_parameter(PMParameter para, int*);
+  void forward(bool block);
+  void map(void);
+  void unmap(void);
+  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
+public:
+  std::vector<int> shape;
 };
 
 class Shape : public OpBase {
@@ -1296,6 +1312,21 @@ struct ReshapeCompare {
   };
 };
 
+struct ResizeKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + MAX_DIM + 1;
+  ResizeKey(const Tensor&, const std::vector<int>&);
+  int keys[KEY_LENGTH];
+};
+
+struct ResizeCompare {
+  bool operator()(const ResizeKey& a, const ResizeKey& b) const {
+    for (int i = 0; i < ResizeKey::KEY_LENGTH; i++)
+      if (a.keys[i] != b.keys[i])
+        return a.keys[i] < b.keys[i];
+    return false;
+  };
+};
+
 struct ShapeKey {
   static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 1;
   ShapeKey(const Tensor& _input, OpType _type);
@@ -1439,6 +1470,8 @@ public:
   Op get_or_create_reduce(const Tensor& _input, OpType _type,
                           const std::vector<int>& _axes, bool _keepdims);
   Op get_or_create_reshape(Tensor _input, const std::vector<int>& shape);
+  Op get_or_create_resize(const Tensor& _input,
+                          const std::vector<int>& _shape);
   Op get_or_create_shape(const Tensor& _input, OpType _type);
   Op get_or_create_slice(const Tensor& _input,
                          const std::vector<int>& _start,
@@ -1471,6 +1504,7 @@ public:
   void measure_transpose_cost(Transpose*);
   void measure_reduce_cost(Reduce*);
   void measure_reshape_cost(Reshape*);
+  void measure_resize_cost(Resize*);
   void measure_activation_cost(Activation*);
   void measure_batchnorm_cost(BatchNorm*);
   void measure_cast_cost(Cast*);
@@ -1527,6 +1561,7 @@ public:
   std::map<Pool2DKey, Pool2D*, Pool2DCompare> pool2d;
   std::map<ReduceKey, Reduce*, ReduceCompare> reduce;
   std::map<ReshapeKey, Reshape*, ReshapeCompare> reshape;
+  std::map<ResizeKey, Resize*, ResizeCompare> resize;
   std::map<ShapeKey, Shape*, ShapeCompare> shape;
   std::map<SliceKey, Slice*, SliceCompare> slice;
   std::map<SplitKey, Split*, SplitCompare> split;

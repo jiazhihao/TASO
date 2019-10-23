@@ -93,8 +93,8 @@ Slice::Slice(Model* _model, const Tensor& _input,
       outputs[0].stride[i] = total;
       total *= outputs[0].dim[i];
     }
-    outputs[0].idx = 0;
   }
+  outputs[0].idx = 0;
 }
 
 Slice::~Slice(void)
