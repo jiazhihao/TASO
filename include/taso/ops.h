@@ -402,6 +402,7 @@ enum OpType {
   OP_LOGICAL_NOT, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Not
   OP_SQRT, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Sqrt
   OP_LEAKYRELU,
+  OP_SLICE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Slice
 };
 
 //That this must be consistent with python/taso/_cython/CCore.pxd
@@ -563,6 +564,11 @@ public:
   TensorHandle round(const TensorHandle _input);
   TensorHandle shape(const TensorHandle _input,
                      OpType _type);
+  TensorHandle slice(const TensorHandle _input,
+                     const std::vector<int>& _start,
+                     const std::vector<int>& _end,
+                     const std::vector<int>& _axes,
+                     const std::vector<int>& _steps);
   TensorHandle sigmoid(const TensorHandle _input,
                        bool _inPlace = true);
   void split(Tensor _input, int axis, int c1, int c2, Tensor* outputs);
@@ -919,6 +925,23 @@ public:
   void map(void);
   void unmap(void);
   void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
+};
+
+class Slice : public OpBase {
+public:
+  Slice(Model* _model, const Tensor& _input,
+        const std::vector<int>& _start,
+        const std::vector<int>& _end,
+        const std::vector<int>& _axes,
+        const std::vector<int>& _steps);
+  ~Slice(void);
+  bool get_int_parameter(PMParameter para, int*);
+  void forward(bool block);
+  void map(void);
+  void unmap(void);
+  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
+public:
+  std::vector<int> start, end, axes, steps;
 };
 
 class Split : public OpBase {
@@ -1288,6 +1311,25 @@ struct ShapeCompare {
   };
 };
 
+struct SliceKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + MAX_DIM * 4 + 1;
+  SliceKey(const Tensor& _input,
+           const std::vector<int>& _start,
+           const std::vector<int>& _end,
+           const std::vector<int>& _axes,
+           const std::vector<int>& _steps);
+  int keys[KEY_LENGTH];
+};
+
+struct SliceCompare {
+  bool operator()(const SliceKey& a, const SliceKey& b) const {
+    for (int i = 0; i < SliceKey::KEY_LENGTH; i++)
+      if (a.keys[i] != b.keys[i])
+        return a.keys[i] < b.keys[i];
+    return false;
+  };
+};
+
 struct SqueezeKey {
   static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + MAX_DIM;
   SqueezeKey(const Tensor& input, const std::vector<int>& axes);
@@ -1398,6 +1440,11 @@ public:
                           const std::vector<int>& _axes, bool _keepdims);
   Op get_or_create_reshape(Tensor _input, const std::vector<int>& shape);
   Op get_or_create_shape(const Tensor& _input, OpType _type);
+  Op get_or_create_slice(const Tensor& _input,
+                         const std::vector<int>& _start,
+                         const std::vector<int>& _end,
+                         const std::vector<int>& _axes,
+                         const std::vector<int>& _steps);
   Op get_or_create_squeeze(const Tensor& input, const std::vector<int>& axes);
   Op get_or_create_split(Tensor _input, int axis, int n, int* channels);
   Op get_or_create_split(Tensor _input, int axis, int n);
@@ -1429,6 +1476,7 @@ public:
   void measure_cast_cost(Cast*);
   void measure_concat_cost(Concat*);
   void measure_shape_cost(Shape*);
+  void measure_slice_cost(Slice*);
   void measure_split_cost(Split*);
   void measure_element_cost(Element*);
   void measure_elementwise_unary_cost(ElementWiseUnary*);
@@ -1480,6 +1528,7 @@ public:
   std::map<ReduceKey, Reduce*, ReduceCompare> reduce;
   std::map<ReshapeKey, Reshape*, ReshapeCompare> reshape;
   std::map<ShapeKey, Shape*, ShapeCompare> shape;
+  std::map<SliceKey, Slice*, SliceCompare> slice;
   std::map<SplitKey, Split*, SplitCompare> split;
   std::map<SqueezeKey, Squeeze*, SqueezeCompare> squeeze;
   std::map<TopKKey, TopK*, TopKCompare> topk;

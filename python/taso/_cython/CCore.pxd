@@ -89,6 +89,7 @@ cdef extern from "taso/ops.h" namespace "taso":
         OP_LOGICAL_NOT,
         OP_SQRT,
         OP_LEAKYRELU,
+        OP_SLICE,
 
     # This must be consistent with include/taso/ops.h
     cdef enum PMParameter:

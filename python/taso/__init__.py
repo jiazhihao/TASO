@@ -41,7 +41,6 @@ def onnx_datatype_tostring(dtype):
     else:
         raise Exception('Unknown onnx datatype')
 
-
 def _check_output(taso_output, onnx_output):
     # TODO: check output match
     return True
@@ -349,13 +348,28 @@ def _reducesum(op, graph, tensors, initializer):
 def _reshape(op, graph, tensors, initializer):
     inputs = _get_inputs(op, tensors)
     assert len(inputs) == 2
+    shape = list()
     for data in initializer:
         if data.name == op.input[1]:
-            shape = list()
             for dim in data.int64_data:
                 shape.append(dim)
     outputs = graph.reshape(inputs[0], tuple(shape))
     return outputs
+
+def _resize_nearest_neighbor(op, graph, tensors, initializer):
+    inputs = _get_inputs(op, tensors)
+    assert len(inputs) == 2, "ResizeNearestNeighbor takes exactly two inputs"
+    shape = list()
+    for data in initializer:
+        if data.name == op.input[1]:
+            for dim in data.int64_data:
+                shape.append(dim)
+    assert len(shape) == 2, "ResizeNeareestNeighbor: new size cannot be statically inferred"
+    outputs = graph.resize_nearest_neighbor(input=inputs[0], new_height=shape[0], new_width=shape[1])
+
+def _crop_and_resize(op, graph, tensors, initializer):
+    inputs = _get_inputs(op, tensors)
+
 
 def _relu(op, graph, tensors, initializer):
     assert len(op.input) == 1, "Relu requires exactly one input"
@@ -383,6 +397,23 @@ def _size(op, graph, tensors, initializer):
     assert op.input[0] in tensors
     attrs = _parse_attribute(op.attribute)
     outputs = graph.size(tensors[op.input[0]])
+    return outputs
+
+def _slice(op, graph, tensors, initializer):
+    assert len(op.input) >= 3, "Slice requires at least 3 inputs"
+    assert len(op.input) <= 5, "Slice takes at most 5 inputs"
+    start = _get_list_from_initializer(initializer, op.input[1])
+    end = _get_list_from_initializer(initializer, op.input[2])
+    if len(op.input) > 3:
+        axes = _get_list_from_initializer(initializer, op.input[3])
+    else:
+        axes = None
+    if len(op.input) > 4:
+        steps = _get_list_from_initializer(initializer, op.input[4])
+    else:
+        steps = None
+    assert op.input[0] in tensors
+    outputs = graph.slice(tensors[oop.input[0]], start, end, axes, steps)
     return outputs
 
 def _split(op, graph, tensors, initializer):
@@ -413,6 +444,25 @@ def _squeeze(op, graph, tensors, initializer):
     for i in axes_ints:
         axes.append(i)
     outputs = graph.squeeze(input=tensors[op.input[0]], axes=tuple(axes))
+    return outputs
+
+def _strided_slice(op, graph, tensors, initializer):
+    assert len(op.input) == 4, "StrideSlice takes exactly four inputs"
+    assert op.input[0] in tensors
+    start = _get_list_from_initializer(initializer, op.input[1])
+    end = _get_list_from_initializer(initializer, op.input[2])
+    steps = _get_list_from_initializer(initializer, op.input[3])
+    attrs = _parse_attribute(op.attribute)
+    begin_mask = attrs["begin_mask"]
+    end_mask = attrs["end_mask"]
+    ellipsis_mask = attrs["ellipsis_mask"]
+    new_axis_mask = attrs["new_axis_mask"]
+    shrink_axis_mask = attrs["shrink_axis_mask"]
+    # TODO: support new_axis and shrink axis
+    assert new_axis_mask == 0, "Non zero new_axis_mask is not supported yet"
+    assert shrink_axis_mask == 0, "Non zero shrink_axis_mask is not supported yet"
+    # TODO: current assume that strided slice returns the original tensor
+    outputs = graph.slice(tensors[op.input[0]], None, None, None, None)
     return outputs
 
 def _sub(op, graph, tensors, initializer):
