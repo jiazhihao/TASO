@@ -222,9 +222,18 @@ def _less(op, graph, tensors, initializer):
 
 def _log(op, graph, tensors, initializer):
     assert len(op.input) == 1, "Log requires exactly one input"
-    assert op.input[0] in tensors
+    input_tensor = None
+    if op.input[0] in tensors:
+        input_tensor = tensors[op.input[0]]
+    else:
+        for init in initializer:
+            if init.name == op.input[0]:
+                input_tensor = graph.new_weight(
+                    dims=tuple(list(init.dims)), data=numpy_helper.to_array(init))
+                break
+    assert input_tensor is not None
     attrs = _parse_attribute(op.attribute)
-    outputs = graph.log(input=tensors[op.input[0]])
+    outputs = graph.log(input=input_tensor)
     return outputs
 
 def _logical_not(op, graph, tensors, initializer):
@@ -436,9 +445,18 @@ def _split(op, graph, tensors, initializer):
 
 def _sqrt(op, graph, tensors, initializer):
     assert len(op.input) == 1, "Sqrt requires exactly one input"
-    assert op.input[0] in tensors
+    input_tensor = None
+    if op.input[0] in tensors:
+        input_tensor = tensors[op.input[0]]
+    else:
+        for init in initializer:
+            if init.name == op.input[0]:
+                input_tensor = graph.new_weight(
+                    dims=tuple(list(init.dims)), data=numpy_helper.to_array(init))
+                break
+    assert input_tensor is not None
     attrs = _parse_attribute(op.attribute)
-    outputs = graph.sqrt(input=tensors[op.input[0]])
+    outputs = graph.sqrt(input=input_tensor)
     return outputs
 
 def _squeeze(op, graph, tensors, initializer):
