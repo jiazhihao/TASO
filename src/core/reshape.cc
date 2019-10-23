@@ -92,6 +92,7 @@ bool Reshape::get_int_parameter(PMParameter para, int* value)
 void Reshape::collect_costs(float& exe_time, float& flops,
                             float& mem_acc, int& num_kernels)
 {
+  exe_time += runtime;
 }
 
 ReshapeKey::ReshapeKey(Tensor _input, const std::vector<int>& shape)
