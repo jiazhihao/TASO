@@ -1027,19 +1027,20 @@ public:
   void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
 };
 
-struct ActivationKey {
-  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 2;
-  ActivationKey(Tensor, OpType, bool);
-  int keys[KEY_LENGTH];
-};
-
-struct ActivationCompare {
-  bool operator()(const ActivationKey& a, const ActivationKey& b) const {
-    for (int i = 0; i < ActivationKey::KEY_LENGTH; i++)
+template<typename T>
+struct KeyCompare {
+  bool operator()(const T& a, const T& b) const {
+    for (int i = 0; i < T::KEY_LENGTH; i++)
       if (a.keys[i] != b.keys[i])
         return a.keys[i] < b.keys[i];
     return false;
   };
+};
+
+struct ActivationKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 2;
+  ActivationKey(Tensor, OpType, bool);
+  int keys[KEY_LENGTH];
 };
 
 // key is (inputN, inputC, inputH, inputW)
@@ -1049,28 +1050,10 @@ struct BatchNormKey {
   int keys[KEY_LENGTH];
 };
 
-struct BatchNormCompare {
-  bool operator()(const BatchNormKey& a, const BatchNormKey& b) const {
-    for (int i = 0; i < BatchNormKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
-};
-
 struct CastKey {
   static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 1;
   CastKey(const Tensor& _input, DataType _datatype);
   int keys[KEY_LENGTH];
-};
-
-struct CastCompare {
-  bool operator()(const CastKey& a, const CastKey& b) const {
-    for (int i = 0; i < CastKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
 };
 
 struct ConcatKey {
@@ -1079,30 +1062,11 @@ struct ConcatKey {
   int keys[KEY_LENGTH];
 };
 
-struct ConcatCompare {
-  bool operator()(const ConcatKey& a, const ConcatKey& b) const {
-    for (int i = 0; i < ConcatKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
-};
-
-
 //keys are (ndim, dims[0..ndims-1], constant_mode
 struct ConstantKey {
   static const int KEY_LENGTH = MAX_DIM + 2;
   ConstantKey(int, int*, OpType);
   int keys[KEY_LENGTH];
-};
-
-struct ConstantCompare {
-  bool operator()(const ConstantKey& a, const ConstantKey& b) const {
-    for (int i = 0; i < ConstantKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  }
 };
 
 // keys are (strideH, strideW, padding, activation, input, weight)
@@ -1113,28 +1077,10 @@ struct Conv2DKey {
   int keys[KEY_LENGTH];
 };
 
-struct Conv2DCompare {
-  bool operator()(const Conv2DKey& a, const Conv2DKey& b) const {
-    for (int i = 0; i < Conv2DKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
-};
-
 struct ElementKey {
   static const int KEY_LENGTH = 2*Tensor::MAX_KEY_LENGTH + 1;
   ElementKey(const Tensor& t1, const Tensor& t2, OpType type);
   int keys[KEY_LENGTH];
-};
-
-struct ElementCompare {
-  bool operator()(const ElementKey& a, const ElementKey& b) const {
-    for (int i = 0; i < ElementKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
 };
 
 struct ElementWiseUnaryKey {
@@ -1143,43 +1089,16 @@ struct ElementWiseUnaryKey {
   int keys[KEY_LENGTH];
 };
 
-struct ElementWiseUnaryCompare {
-  bool operator()(const ElementWiseUnaryKey& a, const ElementWiseUnaryKey& b) const {
-    for (int i = 0; i < ElementWiseUnaryKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
-};
-
 struct EnlargeKey {
   static const int KEY_LENGTH = 2 * Tensor::MAX_KEY_LENGTH;
   EnlargeKey(Tensor w1, Tensor w2);
   int keys[KEY_LENGTH];
 };
 
-struct EnlargeCompare {
-  bool operator()(const EnlargeKey& a, const EnlargeKey& b) const {
-    for (int i = 0; i < EnlargeKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
-};
-
 struct TopKKey {
   static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 4;
   TopKKey(const Tensor& _input, int _axis, int _numk, bool _largest, bool _sorted);
   int keys[KEY_LENGTH];
-};
-
-struct TopKCompare {
-  bool operator()(const TopKKey& a, const TopKKey& b) const {
-    for (int i = 0; i < TopKKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
 };
 
 // keys are (inputX, inputN, inputC, outputC, acti)
@@ -1190,28 +1109,10 @@ struct MatmulKey {
   int keys[KEY_LENGTH];
 };
 
-struct MatmulCompare {
-  bool operator()(const MatmulKey& a, const MatmulKey& b) const {
-    for (int i = 0; i < MatmulKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
-};
-
 struct MergeGConvKey {
   static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 1;
   MergeGConvKey(const Tensor& weight, int count);
   int keys[KEY_LENGTH];
-};
-
-struct MergeGConvCompare {
-  bool operator()(const MergeGConvKey& a, const MergeGConvKey& b) const {
-    for (int i = 0; i < MergeGConvKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
 };
 
 // keys are (inputX, inputN, inputC, outputC, acti)
@@ -1221,28 +1122,10 @@ struct MulKey {
   int keys[KEY_LENGTH];
 };
 
-struct MulCompare {
-  bool operator()(const MulKey& a, const MulKey& b) const {
-    for (int i = 0; i < MulKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
-};
-
 struct NoopKey {
   static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 1;
   NoopKey(Tensor input, OpType typee);
   int keys[KEY_LENGTH];
-};
-
-struct NoopCompare {
-  bool operator()(const NoopKey& a, const NoopKey& b) const {
-    for (int i = 0; i < NoopKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
 };
 
 struct PadKey {
@@ -1252,15 +1135,6 @@ struct PadKey {
          const std::vector<int>& _pad_after,
          float _pad_value);
   int keys[KEY_LENGTH];
-};
-
-struct PadCompare {
-  bool operator()(const PadKey& a, const PadKey& b) const {
-    for (int i = 0; i < PadKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
 };
 
 // keys are (inputN, inputC, inputH, inputW, kernelH, kernelW,              
@@ -1273,28 +1147,10 @@ struct Pool2DKey {
   int keys[KEY_LENGTH];
 };
 
-struct Pool2DCompare {
-  bool operator()(const Pool2DKey& a, const Pool2DKey& b) const {
-    for (int i = 0; i < Pool2DKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
-};
-
 struct ReduceKey {
   static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + MAX_DIM + 3;
   ReduceKey(const Tensor&, OpType, const std::vector<int>&, bool);
   int keys[KEY_LENGTH];
-};
-
-struct ReduceCompare {
-  bool operator()(const ReduceKey& a, const ReduceKey& b) const {
-    for (int i = 0; i < ReduceKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
 };
 
 struct ReshapeKey {
@@ -1303,43 +1159,16 @@ struct ReshapeKey {
   int keys[KEY_LENGTH];
 };
 
-struct ReshapeCompare {
-  bool operator()(const ReshapeKey& a, const ReshapeKey& b) const {
-    for (int i = 0; i < ReshapeKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
-};
-
 struct ResizeKey {
   static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + MAX_DIM + 1;
   ResizeKey(const Tensor&, const std::vector<int>&);
   int keys[KEY_LENGTH];
 };
 
-struct ResizeCompare {
-  bool operator()(const ResizeKey& a, const ResizeKey& b) const {
-    for (int i = 0; i < ResizeKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
-};
-
 struct ShapeKey {
   static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 1;
   ShapeKey(const Tensor& _input, OpType _type);
   int keys[KEY_LENGTH];
-};
-
-struct ShapeCompare {
-  bool operator()(const ShapeKey& a, const ShapeKey& b) const {
-    for (int i = 0; i < ShapeKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
 };
 
 struct SliceKey {
@@ -1352,28 +1181,10 @@ struct SliceKey {
   int keys[KEY_LENGTH];
 };
 
-struct SliceCompare {
-  bool operator()(const SliceKey& a, const SliceKey& b) const {
-    for (int i = 0; i < SliceKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
-};
-
 struct SqueezeKey {
   static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + MAX_DIM;
   SqueezeKey(const Tensor& input, const std::vector<int>& axes);
   int keys[KEY_LENGTH];
-};
-
-struct SqueezeCompare {
-  bool operator()(const SqueezeKey& a, const SqueezeKey& b) const {
-    for (int i = 0; i < SqueezeKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
 };
 
 struct SplitKey {
@@ -1382,28 +1193,10 @@ struct SplitKey {
   int keys[KEY_LENGTH];
 };
 
-struct SplitCompare {
-  bool operator()(const SplitKey& a, const SplitKey& b) const {
-    for (int i = 0; i < SplitKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
-};
-
 struct TransposeKey {
   static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 2;
   TransposeKey(Tensor, const std::vector<int>&, bool);
   int keys[KEY_LENGTH];
-};
-
-struct TransposeCompare {
-  bool operator()(const TransposeKey& a, const TransposeKey& b) const {
-    for (int i = 0; i < TransposeKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
 };
 
 struct UnsqueezeKey {
@@ -1412,28 +1205,10 @@ struct UnsqueezeKey {
   int keys[KEY_LENGTH];
 };
 
-struct UnsqueezeCompare {
-  bool operator()(const UnsqueezeKey& a, const UnsqueezeKey& b) const {
-    for (int i = 0; i < UnsqueezeKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
-};
-
 struct WhereKey {
   static const int KEY_LENGTH = 3 * Tensor::MAX_KEY_LENGTH;
   WhereKey(const Tensor& _cond, const Tensor& _x, const Tensor& _y);
   int keys[KEY_LENGTH];
-};
-
-struct WhereCompare {
-  bool operator()(const WhereKey& a, const WhereKey& b) const {
-    for (int i = 0; i < WhereKey::KEY_LENGTH; i++)
-      if (a.keys[i] != b.keys[i])
-        return a.keys[i] < b.keys[i];
-    return false;
-  };
 };
 
 class Model {
@@ -1544,32 +1319,32 @@ public:
   // variables for element wise
   cudnnOpTensorDescriptor_t opDesc;
 #endif
-  std::map<ActivationKey, Activation*, ActivationCompare> activation;
-  std::map<BatchNormKey, BatchNorm*, BatchNormCompare> batchnorm;
-  std::map<CastKey, Cast*, CastCompare> cast;
-  std::map<ConcatKey, Concat*, ConcatCompare> concat;
-  std::map<ConstantKey, Constant*, ConstantCompare> constant;
-  std::map<Conv2DKey, Conv2D*, Conv2DCompare> conv2d;
-  std::map<ElementKey, Element*, ElementCompare> element;
-  std::map<ElementWiseUnaryKey, ElementWiseUnary*, ElementWiseUnaryCompare> element_unary;
-  std::map<EnlargeKey, Enlarge*, EnlargeCompare> enlarge;
-  std::map<MatmulKey, Matmul*, MatmulCompare> matmul;
-  std::map<MergeGConvKey, MergeGConv*, MergeGConvCompare> merge_gconv;
-  std::map<MulKey, Mul*, MulCompare> mul;
-  std::map<NoopKey, NoOp*, NoopCompare> noop;
-  std::map<PadKey, Pad*, PadCompare> pad;
-  std::map<Pool2DKey, Pool2D*, Pool2DCompare> pool2d;
-  std::map<ReduceKey, Reduce*, ReduceCompare> reduce;
-  std::map<ReshapeKey, Reshape*, ReshapeCompare> reshape;
-  std::map<ResizeKey, Resize*, ResizeCompare> resize;
-  std::map<ShapeKey, Shape*, ShapeCompare> shape;
-  std::map<SliceKey, Slice*, SliceCompare> slice;
-  std::map<SplitKey, Split*, SplitCompare> split;
-  std::map<SqueezeKey, Squeeze*, SqueezeCompare> squeeze;
-  std::map<TopKKey, TopK*, TopKCompare> topk;
-  std::map<TransposeKey, Transpose*, TransposeCompare> transpose;
-  std::map<UnsqueezeKey, Unsqueeze*, UnsqueezeCompare> unsqueeze;
-  std::map<WhereKey, Where*, WhereCompare> where;
+  std::map<ActivationKey, Activation*, KeyCompare<ActivationKey> > activation;
+  std::map<BatchNormKey, BatchNorm*, KeyCompare<BatchNormKey> > batchnorm;
+  std::map<CastKey, Cast*, KeyCompare<CastKey> > cast;
+  std::map<ConcatKey, Concat*, KeyCompare<ConcatKey> > concat;
+  std::map<ConstantKey, Constant*, KeyCompare<ConstantKey> > constant;
+  std::map<Conv2DKey, Conv2D*, KeyCompare<Conv2DKey> > conv2d;
+  std::map<ElementKey, Element*, KeyCompare<ElementKey> > element;
+  std::map<ElementWiseUnaryKey, ElementWiseUnary*, KeyCompare<ElementWiseUnaryKey> > element_unary;
+  std::map<EnlargeKey, Enlarge*, KeyCompare<EnlargeKey> > enlarge;
+  std::map<MatmulKey, Matmul*, KeyCompare<MatmulKey> > matmul;
+  std::map<MergeGConvKey, MergeGConv*, KeyCompare<MergeGConvKey> > merge_gconv;
+  std::map<MulKey, Mul*, KeyCompare<MulKey> > mul;
+  std::map<NoopKey, NoOp*, KeyCompare<NoopKey> > noop;
+  std::map<PadKey, Pad*, KeyCompare<PadKey> > pad;
+  std::map<Pool2DKey, Pool2D*, KeyCompare<Pool2DKey> > pool2d;
+  std::map<ReduceKey, Reduce*, KeyCompare<ReduceKey> > reduce;
+  std::map<ReshapeKey, Reshape*, KeyCompare<ReshapeKey> > reshape;
+  std::map<ResizeKey, Resize*, KeyCompare<ResizeKey> > resize;
+  std::map<ShapeKey, Shape*, KeyCompare<ShapeKey> > shape;
+  std::map<SliceKey, Slice*, KeyCompare<SliceKey> > slice;
+  std::map<SplitKey, Split*, KeyCompare<SplitKey> > split;
+  std::map<SqueezeKey, Squeeze*, KeyCompare<SqueezeKey> > squeeze;
+  std::map<TopKKey, TopK*, KeyCompare<TopKKey> > topk;
+  std::map<TransposeKey, Transpose*, KeyCompare<TransposeKey> > transpose;
+  std::map<UnsqueezeKey, Unsqueeze*, KeyCompare<UnsqueezeKey> > unsqueeze;
+  std::map<WhereKey, Where*, KeyCompare<WhereKey> > where;
   DATATYPE *inputPtr, *biasPtr, *outputPtr, *filterPtr;
   // variables for batch norm
   DATATYPE *scalePtr, *runningMean, *runningVar, *saveMean, *saveVar;
