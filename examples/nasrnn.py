@@ -1,4 +1,5 @@
-import xflow as xf
+import taso
+import onnx
 
 hidden_size = 512
 length = 5
@@ -22,11 +23,12 @@ def nas_node(graph, input, x):
     midt.append(graph.mul(graph.tanh(midt[4]), graph.tanh(midt[5])))
     return graph.tanh(midt[6])
 
-graph = xf.new_graph()
+graph = taso.new_graph()
 xs = list()
 for i in range(length):
     xs.append(graph.new_input(dims=(1, hidden_size)))
 state = graph.new_weight(dims=(1, hidden_size))
 for i in range(length):
     state = nas_node(graph, state, xs[i])
-new_graph = xf.optimize(graph, alpha=1.0, budget=100)
+new_graph = taso.optimize(graph, alpha=1.0, budget=100)
+onnx_model = taso.export_onnx(new_graph)

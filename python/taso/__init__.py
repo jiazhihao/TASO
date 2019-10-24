@@ -270,13 +270,13 @@ def _matmul(op, graph, tensors, initializer):
 def _min(op, graph, tensors, initializer):
     inputs = _get_inputs(op, graph, tensors, initializer)
     assert len(inputs) == 2, "Min takes exactly two inputs"
-    outputs = graph.min(x=inputs[0], y=inputs[1])
+    outputs = graph.min(inputs[0], inputs[1])
     return outputs
 
 def _mul(op, graph, tensors, initializer):
     inputs = _get_inputs(op, graph, tensors, initializer)
     assert len(inputs) == 2, "Mul takes exactly two inputs"
-    outputs = graph.mul(x=inputs[0], y=inputs[1])
+    outputs = graph.mul(inputs[0], inputs[1])
     return outputs
 
 def _pad(op, graph, tensors, initializer):
@@ -660,6 +660,7 @@ input_weight_names = dict()
 input_weight_names['Add'] = ['input1', 'input2']
 input_weight_names['AveragePool'] = ['input']
 input_weight_names['BatchNormalization'] = ['input', 'scale', 'bias', 'mean', 'var']
+input_weight_names['Concat'] = ['input1', 'input2', 'input3', 'input4', 'input5', 'input6']
 input_weight_names['Conv'] = ['input', 'weight', 'bias']
 input_weight_names['Matmul'] = ['input', 'weight']
 input_weight_names['Mul'] = ['input1', 'input2']
@@ -676,9 +677,11 @@ operator_attrs['Gemm'] = []
 operator_attrs['Matmul'] = []
 operator_attrs['MaxPool'] = ['kernel_shape', 'pads', 'strides']
 operator_attrs['Mul'] = []
+operator_attrs['Sigmoid'] = []
 operator_attrs['Split'] = ['axis', 'split']
 operator_attrs['Relu'] = []
 operator_attrs['Reshape'] = []
+operator_attrs['Tanh'] = []
 operator_attrs['Transpose'] = ['perm']
 
 def _input_tensor_name(graph, inedge, op):

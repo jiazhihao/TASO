@@ -225,18 +225,18 @@ cdef class PyGraph:
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
-    def max(self, *, PyTensor x, PyTensor y):
+    def max(self, PyTensor x, PyTensor y):
         cdef TensorHandle handle = self.p_graph.element(OP_EW_MAX, x.ctensor, y.ctensor)
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
-    def min(self, *, PyTensor x, PyTensor y):
+    def min(self, PyTensor x, PyTensor y):
         cdef TensorHandle handle = self.p_graph.element(OP_EW_MIN, x.ctensor, y.ctensor)
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
     # element-wise multiplication
-    def mul(self, *, PyTensor x, PyTensor y):
+    def mul(self, PyTensor x, PyTensor y):
         cdef TensorHandle handle = self.p_graph.element(OP_EW_MUL, x.ctensor, y.ctensor)
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
@@ -503,8 +503,12 @@ cdef class PyGraph:
             return "Reshape"
         elif type == OP_RELU:
             return "Relu"
+        elif type == OP_SIGMOID:
+            return "Sigmoid"
         elif type == OP_SPLIT:
             return "Split"
+        elif type == OP_TANH:
+            return "Tanh"
         elif type == OP_TRANSPOSE:
             return "Transpose"
         elif type == OP_POOL2D_MAX:
