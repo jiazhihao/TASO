@@ -155,7 +155,7 @@ def _cast(op, graph, tensors, initializer):
     #assert input_tensor is not None, "Input Tensor Not Found"
     attrs = _parse_attribute(op.attribute)
     to_type = onnx_datatype_tostring(attrs["to"])
-    outputs = graph.cast(input=input_tensor, datatype=to_type)
+    outputs = graph.cast(input=inputs[0], datatype=to_type)
     return outputs
 
 def _ceil(op, graph, tensors, initializer):
