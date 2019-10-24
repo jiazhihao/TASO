@@ -671,7 +671,41 @@ def load_onnx(filename):
                 weight_data = numpy_helper.to_array(weight)
                 tensors[weight.name] = graph.new_weight(dims=tuple(dims), data=weight_data)
 
+    # Reorder nodes to satisfy data dependencies
+    tensor_owner = dict()
+    name_to_op = dict()
     for op in model.graph.node:
+        name_to_op[op.name] = op
+        for output in op.output:
+            tensor_owner[output] = op.name
+    out_edges = dict()
+    dependents = dict()
+    node_list = list()
+    for op in model.graph.node:
+        dependents[op.name] = 0
+        for input in op.input:
+            if input in tensor_owner:
+                dependents[op.name] += 1
+                input_node = tensor_owner[input]
+                if input_node not in out_edges:
+                    out_edges[input_node] = list()
+                out_edges[input_node].append(op.name)
+        if dependents[op.name] == 0:
+            node_list.append(op.name)
+    idx = 0
+    while idx < len(node_list):
+        opname = node_list[idx]
+        if opname in out_edges:
+            for e in out_edges[opname]:
+                dependents[e] -= 1
+                if dependents[e] == 0:
+                    node_list.append(e)
+        idx += 1
+    assert len(node_list) == len(model.graph.node), "Internal error when reording ONNX operators"
+
+    # Add nodse into TASO graph
+    for opname in node_list:
+        op = name_to_op[opname]
         if op.op_type in xf_operators:
             try:
                 outputs = xf_operators[op.op_type](op, graph, tensors, model.graph.initializer)
