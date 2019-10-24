@@ -94,6 +94,40 @@ GraphXfer* GraphXfer::create_conv_batch(Model* model, int strideH, int strideW, 
   return subst;
 }
 
+GraphXfer* GraphXfer::create_conv_mul(Model* model, int strideH, int strideW, PaddingMode mode)
+{
+  GraphXfer* subst = new GraphXfer(model);
+  TensorX input = subst->new_tensor();
+  TensorX weight = subst->new_tensor();
+  TensorX y = subst->new_tensor();
+  OpX* conv = subst->create_conv2d(input, weight, strideH, strideW, mode, AC_MODE_NONE);
+  OpX* mul = subst->create_element(conv->outputs[0], y, OP_EW_MUL);
+  OpX* fuse = subst->create_conv2d(input, weight, strideH, strideW, mode,
+                                    AC_MODE_NONE, false/*isSrc*/);
+  subst->map_output(mul->outputs[0], fuse->outputs[0]);
+  subst->srcOps.push_back(conv);
+  subst->srcOps.push_back(mul);
+  subst->dstOps.push_back(fuse);
+  return subst;
+}
+
+GraphXfer* GraphXfer::create_conv_add(Model* model, int strideH, int strideW, PaddingMode mode)
+{
+  GraphXfer* subst = new GraphXfer(model);
+  TensorX input = subst->new_tensor();
+  TensorX weight = subst->new_tensor();
+  TensorX y = subst->new_tensor();
+  OpX* conv = subst->create_conv2d(input, weight, strideH, strideW, mode, AC_MODE_NONE);
+  OpX* add = subst->create_element(conv->outputs[0], y, OP_EW_ADD);
+  OpX* fuse = subst->create_conv2d(input, weight, strideH, strideW, mode,
+                                    AC_MODE_NONE, false/*isSrc*/);
+  subst->map_output(add->outputs[0], fuse->outputs[0]);
+  subst->srcOps.push_back(conv);
+  subst->srcOps.push_back(add);
+  subst->dstOps.push_back(fuse);
+  return subst;
+}
+
 GraphXfer* GraphXfer::create_enlarge_merge_convs(Model* model, ActiMode activation)
 {
   GraphXfer* subst = new GraphXfer(model);

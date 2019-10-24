@@ -265,14 +265,14 @@ TensorHandle Graph::new_weight(const Tensor& weight)
 Graph* Graph::optimize(float alpha, int budget)
 {
   std::vector<GraphXfer*> xfers;
-  xfers.push_back(GraphXfer::create_conv_relu(model, 1, 1, PD_MODE_SAME));
-  xfers.push_back(GraphXfer::create_conv_relu(model, 1, 1, PD_MODE_VALID));
-  xfers.push_back(GraphXfer::create_conv_relu(model, 2, 2, PD_MODE_SAME));
-  xfers.push_back(GraphXfer::create_conv_relu(model, 2, 2, PD_MODE_VALID));
-  xfers.push_back(GraphXfer::create_conv_batch(model, 1, 1, PD_MODE_SAME));
-  xfers.push_back(GraphXfer::create_conv_batch(model, 1, 1, PD_MODE_VALID));
-  xfers.push_back(GraphXfer::create_conv_batch(model, 2, 2, PD_MODE_SAME));
-  xfers.push_back(GraphXfer::create_conv_batch(model, 2, 2, PD_MODE_VALID));
+  for (int i = 1; i < 3; i++)
+    for (int j = 0; j < 2; j++) {
+      PaddingMode pad_mode = (j == 0) ? PD_MODE_SAME : PD_MODE_VALID;
+      xfers.push_back(GraphXfer::create_conv_relu(model, i, i, pad_mode));
+      xfers.push_back(GraphXfer::create_conv_batch(model, i, i, pad_mode));
+      xfers.push_back(GraphXfer::create_conv_mul(model, i, i, pad_mode));
+      xfers.push_back(GraphXfer::create_conv_add(model, i, i, pad_mode));
+    }
   xfers.push_back(GraphXfer::create_enlarge_merge_convs(model, AC_MODE_NONE));
   xfers.push_back(GraphXfer::create_enlarge_merge_convs(model, AC_MODE_RELU));
   xfers.push_back(GraphXfer::create_merge_group_convs(model, 1, 1, AC_MODE_NONE));

@@ -704,8 +704,11 @@ def load_onnx(filename):
     assert len(node_list) == len(model.graph.node), "Internal error when reording ONNX operators"
 
     # Add nodse into TASO graph
+    cnt = 0
     for opname in node_list:
         op = name_to_op[opname]
+        print(cnt, op.op_type)
+        cnt += 1
         if op.op_type in xf_operators:
             try:
                 outputs = xf_operators[op.op_type](op, graph, tensors, model.graph.initializer)

@@ -190,6 +190,8 @@ public:
   // built-in substitutions
   static GraphXfer* create_conv_relu(Model* model, int strideH, int strideW, PaddingMode padding);
   static GraphXfer* create_conv_batch(Model* model, int strideH, int strideW, PaddingMode padding);
+  static GraphXfer* create_conv_mul(Model* model, int strideH, int strideW, PaddingMode padding);
+  static GraphXfer* create_conv_add(Model* model, int strideH, int strideW, PaddingMode padding);
   static GraphXfer* create_enlarge_merge_convs(Model* model, ActiMode activation);
   static GraphXfer* create_merge_group_convs(Model* model, int strideH, int strideW, ActiMode activation);
 public:
