@@ -75,6 +75,25 @@ GraphXfer* GraphXfer::create_conv_relu(Model* model, int strideH, int strideW, P
   return subst;
 }
 
+GraphXfer* GraphXfer::create_conv_batch(Model* model, int strideH, int strideW, PaddingMode mode)
+{
+  GraphXfer* subst = new GraphXfer(model);
+  TensorX input = subst->new_tensor();
+  TensorX weight = subst->new_tensor();
+  TensorX w[4];
+  for (int i = 0; i < 4; i++)
+    w[i] = subst->new_tensor();
+  OpX* conv = subst->create_conv2d(input, weight, strideH, strideW, mode, AC_MODE_NONE);
+  OpX* batch = subst->create_batchnorm(conv->outputs[0], w[0], w[1], w[2], w[3]);
+  OpX* fuse = subst->create_conv2d(input, weight, strideH, strideW, mode,
+                                   AC_MODE_NONE, false/*isSrc*/);
+  subst->map_output(batch->outputs[0], fuse->outputs[0]);
+  subst->srcOps.push_back(conv);
+  subst->srcOps.push_back(batch);
+  subst->dstOps.push_back(fuse);
+  return subst;
+}
+
 GraphXfer* GraphXfer::create_enlarge_merge_convs(Model* model, ActiMode activation)
 {
   GraphXfer* subst = new GraphXfer(model);
@@ -443,6 +462,25 @@ OpX::OpX(OpType _type, TensorX in1, TensorX in2)
   }
 }
 
+OpX::OpX(OpType _type, TensorX in1, TensorX in2, TensorX in3, TensorX in4, TensorX in5)
+: type(_type)
+{
+  inputs.push_back(in1);
+  inputs.push_back(in2);
+  inputs.push_back(in3);
+  inputs.push_back(in4);
+  inputs.push_back(in5);
+  TensorX out(this, 0);
+  switch (type) {
+    case OP_BATCHNORM:
+      outputs.push_back(out);
+      break;
+    default:
+      assert(false);
+  }
+}
+
+
 OpX::OpX(OpType _type, int n, TensorX* ins)
 : type(_type)
 {
@@ -570,6 +608,14 @@ OpX* GraphXfer::create_conv2d(TensorX input, TensorX weight,
   // The following is no longer true because of group conv
   //conv->add_input_constraint(COMPARE_EQ, IN_1, DIM_1, IN_0, DIM_1);
   return conv;
+}
+
+OpX* GraphXfer::create_batchnorm(TensorX input, TensorX scale,
+                                 TensorX bias, TensorX mean,
+                                 TensorX var)
+{
+  OpX* batch = new OpX(OP_BATCHNORM, input, scale, bias, mean, var);
+  return batch;
 }
 
 OpX* GraphXfer::create_element(TensorX input0, TensorX input1,

@@ -57,6 +57,9 @@ Unsqueeze::Unsqueeze(Model* _model, const Tensor& _input,
       if (axes[j] == i)
         unsqueezed = true;
     if (unsqueezed) {
+      outputs[0].dim[i] = 1;
+      outputs[0].stride[i] = (i == outputs[0].numDim-1) ? 1 : outputs[0].stride[i+1];
+      outputs[0].split[i] = SplitInfo::NO_SPLIT;
     } else {
       outputs[0].dim[i] = _input.dim[n];
       outputs[0].stride[i] = _input.stride[n];

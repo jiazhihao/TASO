@@ -269,6 +269,10 @@ Graph* Graph::optimize(float alpha, int budget)
   xfers.push_back(GraphXfer::create_conv_relu(model, 1, 1, PD_MODE_VALID));
   xfers.push_back(GraphXfer::create_conv_relu(model, 2, 2, PD_MODE_SAME));
   xfers.push_back(GraphXfer::create_conv_relu(model, 2, 2, PD_MODE_VALID));
+  xfers.push_back(GraphXfer::create_conv_batch(model, 1, 1, PD_MODE_SAME));
+  xfers.push_back(GraphXfer::create_conv_batch(model, 1, 1, PD_MODE_VALID));
+  xfers.push_back(GraphXfer::create_conv_batch(model, 2, 2, PD_MODE_SAME));
+  xfers.push_back(GraphXfer::create_conv_batch(model, 2, 2, PD_MODE_VALID));
   xfers.push_back(GraphXfer::create_enlarge_merge_convs(model, AC_MODE_NONE));
   xfers.push_back(GraphXfer::create_enlarge_merge_convs(model, AC_MODE_RELU));
   xfers.push_back(GraphXfer::create_merge_group_convs(model, 1, 1, AC_MODE_NONE));
@@ -301,8 +305,8 @@ Graph* Graph::optimize(float alpha, int budget)
   Graph *bestGraph = this;
   float bestCost = total_cost();
   //printf("MetaFlow Cost = %.4lfms\n", bestCost);
-  printf("Input graph: end-to-end execution time =\n"
-         "%.8lf ms (average of 100 runs)\n", run());
+  //printf("Input graph: end-to-end execution time =\n"
+  //       "%.8lf ms (average of 100 runs)\n", run());
   print_costs();
 
   int counter = 0;
@@ -344,8 +348,8 @@ Graph* Graph::optimize(float alpha, int budget)
   bestGraph = bestGraph->preprocess_weights();
   printf("        ===== Finish Cost-Based Backtracking Search =====\n\n");
   //printf("bestCost = %.4lf\n", bestGraph->total_cost());
-  printf("Optimized graph: end-to-end execution time =\n");
-  printf("%.8lf ms (average of 100 runs)\n", bestGraph->run());
+  //printf("Optimized graph: end-to-end execution time =\n");
+  //printf("%.8lf ms (average of 100 runs)\n", bestGraph->run());
   bestGraph->print_costs();
 
   return bestGraph;

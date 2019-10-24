@@ -68,6 +68,7 @@ class OpX {
 public:
   OpX(OpType _type, TensorX input0, int numOutputs = 1);
   OpX(OpType _type, TensorX input0, TensorX input1);
+  OpX(OpType _type, TensorX input0, TensorX input1, TensorX input2, TensorX input3, TensorX input4);
   OpX(OpType _type, int n, TensorX* ins);
   bool add_pm_constraint(Compare comp, PMParameter para, int value);
   bool add_input_constraint(Compare, TNParameter, DIMParameter, int);
@@ -153,6 +154,7 @@ public:
                      PaddingMode padding,
                      ActiMode activation,
                      bool isSrcOp = true);
+  OpX* create_batchnorm(TensorX input, TensorX scale, TensorX bias, TensorX mean, TensorX var);
   OpX* create_element(TensorX input0, TensorX input1,
                       OpType type, bool isSrcOp = true);
   OpX* create_pool2d_avg(TensorX input, TensorX weight,
@@ -187,6 +189,7 @@ public:
 
   // built-in substitutions
   static GraphXfer* create_conv_relu(Model* model, int strideH, int strideW, PaddingMode padding);
+  static GraphXfer* create_conv_batch(Model* model, int strideH, int strideW, PaddingMode padding);
   static GraphXfer* create_enlarge_merge_convs(Model* model, ActiMode activation);
   static GraphXfer* create_merge_group_convs(Model* model, int strideH, int strideW, ActiMode activation);
 public:

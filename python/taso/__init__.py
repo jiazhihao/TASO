@@ -2,6 +2,10 @@ from .core import *
 import onnx
 from onnx import helper, TensorProto, numpy_helper
 
+class InputNotFoundError(Exception):
+    """Raised when cannot find input tensors """
+    pass
+
 # correspond to https://github.com/onnx/onnx/blob/master/onnx/onnx.proto
 def onnx_datatype_tostring(dtype):
     if dtype == 0:
@@ -56,6 +60,8 @@ def _parse_attribute(attributes):
             atts[att.name] = att.f
         elif att.type == onnx.AttributeProto.STRING:
             atts[att.name] = att.s
+        elif att.type == onnx.AttributeProto.TENSOR:
+            atts[att.name] = att.t
         else:
             assert False, "Unsupported Attribute Type: {}".format(att.type)
     return atts
@@ -97,7 +103,9 @@ def _get_inputs(op, graph, tensors, initializer):
                     input_tensor = graph.new_weight(
                         dims=tuple(list(init.dims)), data=numpy_helper.to_array(init))
                     break
-        assert input_tensor is not None, "Input Tensor Not Found"
+        if input_tensor is None:
+            raise InputNotFoundError
+            return []
         inputs.append(input_tensor)
     return inputs
 
@@ -133,27 +141,29 @@ def _batchnorm(op, graph, tensors, initializer):
     return outputs
 
 def _cast(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "Cast requires exactly one input"
-    input_tensor = None
-    if op.input[0] in tensors:
-        input_tensor = tensors[op.input[0]]
-    else:
-        for init in initializer:
-            if init.name == op.input[0]:
-                input_tensor = graph.new_weight(
-                    dims=tuple(list(init.dims)), data=numpy_helper.to_array(init))
-                break
-    assert input_tensor is not None, "Input Tensor Not Found"
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    #assert len(op.input) == 1, "Cast requires exactly one input"
+    #input_tensor = None
+    #if op.input[0] in tensors:
+    #    input_tensor = tensors[op.input[0]]
+    #else:
+    #    for init in initializer:
+    #        if init.name == op.input[0]:
+    #            input_tensor = graph.new_weight(
+    #                dims=tuple(list(init.dims)), data=numpy_helper.to_array(init))
+    #            break
+    #assert input_tensor is not None, "Input Tensor Not Found"
     attrs = _parse_attribute(op.attribute)
     to_type = onnx_datatype_tostring(attrs["to"])
     outputs = graph.cast(input=input_tensor, datatype=to_type)
     return outputs
 
 def _ceil(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "Ceil requires exactly one input"
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "Ceil requires exactly one input"
     assert op.input[0] in tensors
     attrs = _parse_attribute(op.attribute)
-    outputs = graph.ceil(tensors[op.input[0]])
+    outputs = graph.ceil(inputs[0])
     return outputs
 
 def _concat(op, graph, tensors, initializer):
@@ -161,6 +171,19 @@ def _concat(op, graph, tensors, initializer):
     attrs = _parse_attribute(op.attribute)
     axis = attrs["axis"]
     outputs = graph.concat(axis, inputs)
+    return outputs
+
+def _constant(op, graph, tensors, initializer):
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    attrs = _parse_attribute(op.attribute)
+    # TODO: Currently do not support sparse value
+    assert "value" in attrs, "Do not support sparse value for Constant"
+    tensor = attrs["value"]
+    dims = list()
+    for dim in tensor.dims:
+        dims.append(dim)
+    weight_data = numpy_helper.to_array(tensor)
+    outputs = graph.new_weight(dims=tuple(dims), data=weight_data)
     return outputs
 
 def _conv2d(op, graph, tensors, initializer):
@@ -196,10 +219,10 @@ def _equal(op, graph, tensors, initializer):
     return outputs
 
 def _exp(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "Exp requires exactly one input"
-    assert op.input[0] in tensors
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "Exp requires exactly one input"
     attrs = _parse_attribute(op.attribute)
-    outputs = graph.exp(input=tensors[op.input[0]])
+    outputs = graph.exp(input=inputs[0])
     return outputs
 
 def _gemm(op, graph, tensors, initializer):
@@ -225,11 +248,11 @@ def _identity(op, graph, tensors, initializer):
     return outputs
 
 def _leakyrelu(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "LeakyRelu requires exactly one input"
-    assert op.input[0] in tensors
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "LeakyRelu requires exactly one input"
     attrs = _parse_attribute(op.attribute)
     alpha = attrs["alpha"]
-    outputs = graph.leakyrelu(input=tensors[op.input[0]], alpha=alpha)
+    outputs = graph.leakyrelu(input=inputs[0], alpha=alpha)
     return outputs
 
 def _less(op, graph, tensors, initializer):
@@ -239,26 +262,27 @@ def _less(op, graph, tensors, initializer):
     return outputs
 
 def _log(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "Log requires exactly one input"
-    input_tensor = None
-    if op.input[0] in tensors:
-        input_tensor = tensors[op.input[0]]
-    else:
-        for init in initializer:
-            if init.name == op.input[0]:
-                input_tensor = graph.new_weight(
-                    dims=tuple(list(init.dims)), data=numpy_helper.to_array(init))
-                break
-    assert input_tensor is not None, "Input Tensor Not Found"
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "Log requires exactly one input"
+    #input_tensor = None
+    #if op.input[0] in tensors:
+    #    input_tensor = tensors[op.input[0]]
+    #else:
+    #    for init in initializer:
+    #        if init.name == op.input[0]:
+    #            input_tensor = graph.new_weight(
+    #                dims=tuple(list(init.dims)), data=numpy_helper.to_array(init))
+    #            break
+    #assert input_tensor is not None, "Input Tensor Not Found"
     attrs = _parse_attribute(op.attribute)
-    outputs = graph.log(input=input_tensor)
+    outputs = graph.log(input=inputs[0])
     return outputs
 
 def _logical_not(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "Not requires exactly one input"
-    assert op.input[0] in tensors
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "Not requires exactly one input"
     attrs = _parse_attribute(op.attribute)
-    outputs = graph.logical_not(input=tensors[op.input[0]])
+    outputs = graph.logical_not(input=inputs[0])
     return outputs
 
 def _matmul(op, graph, tensors, initializer):
@@ -293,83 +317,83 @@ def _max(op, graph, tensors, initializer):
     return outputs
 
 def _maxpool2d(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "MaxPool2D requires exactly one input"
-    assert op.input[0] in tensors
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "MaxPool2D requires exactly one input"
     attrs = _parse_attribute(op.attribute)
     kernels = attrs["kernel_shape"]
     strides = attrs["strides"]
     pads = _get_conv_pool_pads_attr(attrs)
-    outputs = graph.maxpool2d(input=tensors[op.input[0]], kernels=kernels, strides=strides, padding=pads)
+    outputs = graph.maxpool2d(input=inputs[0], kernels=kernels, strides=strides, padding=pads)
     return outputs
 
 def _avgpool2d(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "MaxPool2D requires exactly one input"
-    assert op.input[0] in tensors
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "AvgPool2D requires exactly one input"
     attrs = _parse_attribute(op.attribute)
     kernels = attrs["kernel_shape"]
     strides = attrs["strides"]
     pads = _get_conv_pool_pads_attr(attrs)
-    outputs = graph.avgpool2d(input=tensors[op.input[0]], kernels=kernels, strides=strides, padding=pads)
+    outputs = graph.avgpool2d(input=inputs[0], kernels=kernels, strides=strides, padding=pads)
     return outputs
 
 def _reducemax(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "ReduceMax requires exactly one input"
-    assert op.input[0] in tensors
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "ReduceMax requires exactly one input"
     attrs = _parse_attribute(op.attribute)
     keepdims = attrs["keepdims"]
     axes_ints = attrs["axes"]
     axes_list = list()
     for i in axes_ints:
         axes_list.append(i)
-    outputs = graph.reduce_max(input=tensors[op.input[0]], axes=tuple(axes_list), keepdims=keepdims)
+    outputs = graph.reduce_max(input=inputs[0], axes=tuple(axes_list), keepdims=keepdims)
     return outputs
 
 def _reducemean(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "ReduceMean requires exactly one input"
-    assert op.input[0] in tensors
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "ReduceMean requires exactly one input"
     attrs = _parse_attribute(op.attribute)
     keepdims = attrs["keepdims"]
     axes_ints = attrs["axes"]
     axes_list = list()
     for i in axes_ints:
         axes_list.append(i)
-    outputs = graph.reduce_mean(input=tensors[op.input[0]], axes=tuple(axes_list), keepdims=keepdims)
+    outputs = graph.reduce_mean(input=inputs[0], axes=tuple(axes_list), keepdims=keepdims)
     return outputs
 
 def _reducemin(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "ReduceMin requires exactly one input"
-    assert op.input[0] in tensors
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "ReduceMin requires exactly one input"
     attrs = _parse_attribute(op.attribute)
     keepdims = attrs["keepdims"]
     axes_ints = attrs["axes"]
     axes_list = list()
     for i in axes_ints:
         axes_list.append(i)
-    outputs = graph.reduce_min(input=tensors[op.input[0]], axes=tuple(axes_list), keepdims=keepdims)
+    outputs = graph.reduce_min(input=inputs[0], axes=tuple(axes_list), keepdims=keepdims)
     return outputs
 
 def _reduceprod(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "ReduceProd requires exactly one input"
-    assert op.input[0] in tensors
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "ReduceProd requires exactly one input"
     attrs = _parse_attribute(op.attribute)
     keepdims = attrs["keepdims"]
     axes_ints = attrs["axes"]
     axes_list = list()
     for i in axes_ints:
         axes_list.append(i)
-    outputs = graph.reduce_prod(input=tensors[op.input[0]], axes=tuple(axes_list), keepdims=keepdims)
+    outputs = graph.reduce_prod(input=inputs[0], axes=tuple(axes_list), keepdims=keepdims)
     return outputs
 
 def _reducesum(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "ReduceSum requires exactly one input"
-    assert op.input[0] in tensors
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "ReduceSum requires exactly one input"
     attrs = _parse_attribute(op.attribute)
     keepdims = attrs["keepdims"]
     axes_ints = attrs["axes"]
     axes_list = list()
     for i in axes_ints:
         axes_list.append(i)
-    outputs = graph.reduce_sum(input=tensors[op.input[0]], axes=tuple(axes_list), keepdims=keepdims)
+    outputs = graph.reduce_sum(input=inputs[0], axes=tuple(axes_list), keepdims=keepdims)
     return outputs
 
 def _reshape(op, graph, tensors, initializer):
@@ -418,34 +442,35 @@ def _crop_and_resize(op, graph, tensors, initializer):
     return outputs
 
 def _relu(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "Relu requires exactly one input"
-    assert op.input[0] in tensors
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "Relu requires exactly one input"
     attrs = _parse_attribute(op.attribute)
-    outputs = graph.relu(input=tensors[op.input[0]])
+    outputs = graph.relu(input=inputs[0])
     return outputs
 
 def _round(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "Round requires exactly one input"
-    assert op.input[0] in tensors
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "Round requires exactly one input"
     attrs = _parse_attribute(op.attribute)
-    outputs = graph.round(tensors[op.input[0]])
+    outputs = graph.round(inputs[0])
     return outputs
 
 def _shape(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "Shape requires exactly one input"
-    assert op.input[0] in tensors
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs)== 1, "Shape requires exactly one input"
     attrs = _parse_attribute(op.attribute)
-    outputs = graph.shape(tensors[op.input[0]])
+    outputs = graph.shape(inputs[0])
     return outputs
 
 def _size(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "Size requires exactly one input"
-    assert op.input[0] in tensors
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "Size requires exactly one input"
     attrs = _parse_attribute(op.attribute)
-    outputs = graph.size(tensors[op.input[0]])
+    outputs = graph.size(inputs[0])
     return outputs
 
 def _slice(op, graph, tensors, initializer):
+    inputs = _get_inputs(op, graph, tensors, initializer)
     assert len(op.input) >= 3, "Slice requires at least 3 inputs"
     assert len(op.input) <= 5, "Slice takes at most 5 inputs"
     start = _get_list_from_initializer(initializer, op.input[1])
@@ -459,51 +484,52 @@ def _slice(op, graph, tensors, initializer):
     else:
         steps = None
     assert op.input[0] in tensors
-    outputs = graph.slice(tensors[oop.input[0]], start, end, axes, steps)
+    outputs = graph.slice(inputs[0], start, end, axes, steps)
     return outputs
 
 def _split(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "Split requires exactly one input"
-    assert op.input[0] in tensors
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "Split requires exactly one input"
     attrs = _parse_attribute(op.attribute)
     axis = attrs["axis"]
     split_ints = attrs["split"]
     split_list = list()
     for i in split_ints:
         split_list.append(i)
-    outputs = graph.split(tensors[op.input[0]], axis, split_list)
+    outputs = graph.split(inputs[0], axis, split_list)
     return outputs
 
 def _sqrt(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "Sqrt requires exactly one input"
-    input_tensor = None
-    if op.input[0] in tensors:
-        input_tensor = tensors[op.input[0]]
-    else:
-        for init in initializer:
-            if init.name == op.input[0]:
-                input_tensor = graph.new_weight(
-                    dims=tuple(list(init.dims)), data=numpy_helper.to_array(init))
-                break
-    assert input_tensor is not None, "Input Tensor Not Found"
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "Sqrt requires exactly one input"
+    #input_tensor = None
+    #if op.input[0] in tensors:
+    #    input_tensor = tensors[op.input[0]]
+    #else:
+    #    for init in initializer:
+    #        if init.name == op.input[0]:
+    #            input_tensor = graph.new_weight(
+    #                dims=tuple(list(init.dims)), data=numpy_helper.to_array(init))
+    #            break
+    #assert input_tensor is not None, "Input Tensor Not Found"
     attrs = _parse_attribute(op.attribute)
-    outputs = graph.sqrt(input=input_tensor)
+    outputs = graph.sqrt(input=inputs[0])
     return outputs
 
 def _squeeze(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "Squeeze takes exactly one input"
-    assert op.input[0] in tensors
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "Squeeze takes exactly one input"
     attrs = _parse_attribute(op.attribute)
     axes_ints = attrs["axes"]
     axes = list()
     for i in axes_ints:
         axes.append(i)
-    outputs = graph.squeeze(input=tensors[op.input[0]], axes=tuple(axes))
+    outputs = graph.squeeze(input=inputs[0], axes=tuple(axes))
     return outputs
 
 def _strided_slice(op, graph, tensors, initializer):
-    assert len(op.input) == 4, "StrideSlice takes exactly four inputs"
-    assert op.input[0] in tensors
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 4, "StrideSlice takes exactly four inputs"
     start = _get_list_from_initializer(initializer, op.input[1])
     end = _get_list_from_initializer(initializer, op.input[2])
     steps = _get_list_from_initializer(initializer, op.input[3])
@@ -517,7 +543,7 @@ def _strided_slice(op, graph, tensors, initializer):
     assert new_axis_mask == 0, "Non zero new_axis_mask is not supported yet"
     assert shrink_axis_mask == 0, "Non zero shrink_axis_mask is not supported yet"
     # TODO: current assume that strided slice returns the original tensor
-    outputs = graph.slice(tensors[op.input[0]], None, None, None, None)
+    outputs = graph.slice(inputs[0], None, None, None, None)
     return outputs
 
 def _sub(op, graph, tensors, initializer):
@@ -527,34 +553,35 @@ def _sub(op, graph, tensors, initializer):
     return outputs
 
 def _transpose(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "Transpose requires exactly one input"
-    assert op.input[0] in tensors
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "Transpose requires exactly one input"
     attrs = _parse_attribute(op.attribute)
     perm_ints = attrs["perm"]
     perm = list()
     for i in perm_ints:
         perm.append(i)
-    outputs = graph.transpose(tensors[op.input[0]], tuple(perm), shuffle=True)
+    outputs = graph.transpose(inputs[0], tuple(perm), shuffle=True)
     return outputs
 
 def _unsqueeze(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "Unsqueeze takes exactly one input"
-    input_tensor = None
-    if op.input[0] in tensors:
-        input_tensor = tensors[op.input[0]]
-    else:
-        for init in initializer:
-            if init.name == op.input[0]:
-                input_tensor = graph.new_weight(
-                    dims=tuple(list(init.dims)), data=numpy_helper.to_array(init))
-                break
-    assert input_tensor is not None, "Input Tensor Not Found"
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "Unsqueeze takes exactly one input"
+    #input_tensor = None
+    #if op.input[0] in tensors:
+    #    input_tensor = tensors[op.input[0]]
+    #else:
+    #    for init in initializer:
+    #        if init.name == op.input[0]:
+    #            input_tensor = graph.new_weight(
+    #                dims=tuple(list(init.dims)), data=numpy_helper.to_array(init))
+    #            break
+    #assert input_tensor is not None, "Input Tensor Not Found"
     attrs = _parse_attribute(op.attribute)
     axes_ints = attrs["axes"]
     axes = list()
     for i in axes_ints:
         axes.append(i)
-    outputs = graph.unsqueeze(input=input_tensor, axes=tuple(axes))
+    outputs = graph.unsqueeze(input=inputs[0], axes=tuple(axes))
     return outputs
 
 # Add all supported operators
@@ -566,6 +593,7 @@ xf_operators['BatchNormalization'] = _batchnorm
 xf_operators['Cast'] = _cast
 xf_operators['Ceil'] = _ceil
 xf_operators['Concat'] = _concat
+xf_operators["Constant"] = _constant
 xf_operators['Conv'] = _conv2d
 xf_operators['Div'] = _div
 xf_operators['Dropout'] = _dropout
@@ -645,15 +673,20 @@ def load_onnx(filename):
 
     for op in model.graph.node:
         if op.op_type in xf_operators:
-            outputs = xf_operators[op.op_type](op, graph, tensors, model.graph.initializer)
-            if not isinstance(outputs, list):
-                outputs = [outputs]
-            assert len(outputs) == len(op.output), "Number of output tensors mismatch"
-            for i in range(len(outputs)):
-                assert _check_output(outputs[i], op.output[i])
-                tensors[op.output[i]] = outputs[i]
+            try:
+                outputs = xf_operators[op.op_type](op, graph, tensors, model.graph.initializer)
+                if not isinstance(outputs, list):
+                    outputs = [outputs]
+                assert len(outputs) == len(op.output), "Number of output tensors mismatch"
+                for i in range(len(outputs)):
+                    assert _check_output(outputs[i], op.output[i])
+                    tensors[op.output[i]] = outputs[i]
+            except InputNotFoundError:
+                print("Cannot find input tensor for operator: {} (Skipped)".format(op.op_type))
+                continue
         else:
-            assert False, "Unsupported ONNX operator: {}".format(op.op_type)
+            print("Found unsupported ONNX operator: {} (Skipped)".format(op.op_type))
+            continue
     return graph
 
 input_weight_names = dict()

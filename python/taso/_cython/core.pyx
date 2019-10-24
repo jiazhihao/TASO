@@ -332,12 +332,12 @@ cdef class PyGraph:
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
-    def round(self, *, PyTensor input):
+    def round(self, PyTensor input):
         cdef TensorHandle handle = self.p_graph.round(input.ctensor)
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
-    def shape(self, *, PyTensor input):
+    def shape(self, PyTensor input):
         cdef TensorHandle handle = self.p_graph.shape(input.ctensor, OP_SHAPE)
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
