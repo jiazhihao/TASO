@@ -493,10 +493,13 @@ def _split(op, graph, tensors, initializer):
     attrs = _parse_attribute(op.attribute)
     axis = attrs["axis"]
     split_ints = attrs["split"]
-    split_list = list()
-    for i in split_ints:
-        split_list.append(i)
-    outputs = graph.split(inputs[0], axis, split_list)
+    if type(split_ints) is not list:
+        outputs = graph.split(inputs[0], axis, [split_ints])
+    else:
+        split_list = list()
+        for i in split_ints:
+            split_list.append(i)
+        outputs = graph.split(inputs[0], axis, split_list)
     return outputs
 
 def _sqrt(op, graph, tensors, initializer):
