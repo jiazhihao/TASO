@@ -494,7 +494,7 @@ def _split(op, graph, tensors, initializer):
     axis = attrs["axis"]
     split_ints = attrs["split"]
     if type(split_ints) is not list:
-        outputs = graph.split(inputs[0], axis, split_ints)
+        outputs = graph.split(inputs[0], axis, [split_ints])
     else:
         split_list = list()
         for i in split_ints:
