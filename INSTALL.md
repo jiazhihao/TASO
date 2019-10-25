@@ -33,7 +33,7 @@ sudo make install -j 4
 
 * Install the TASO python package.
 ```
-cd python
+cd ../python
 python setup.py install
 ```
 
