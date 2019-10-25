@@ -35,11 +35,11 @@ Op Model::get_or_create_slice(const Tensor& _input,
                               const std::vector<int>& _axes,
                               const std::vector<int>& _steps)
 {
-  if (_start.size() != _end.size());
+  if (_start.size() != _end.size())
     return Op::INVALID_OP;
-  if (_start.size() != _axes.size());
+  if (_start.size() != _axes.size())
     return Op::INVALID_OP;
-  if (_start.size() != _steps.size());
+  if (_start.size() != _steps.size())
     return Op::INVALID_OP;
   SliceKey key(_input, _start, _end, _axes, _steps);
   Slice* sliceOp;
