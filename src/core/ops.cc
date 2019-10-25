@@ -1148,8 +1148,7 @@ float Graph::run(void)
       {
         Split* split = (Split*) op.ptr;
         assert(inList.size() == 1);
-        opPtr = new Split(model, inputs[0], split->axis,
-                          split->numOutputs, split->sizes);
+        opPtr = new Split(model, inputs[0], split->axis, split->sizes);
         break;
       }
       case OP_INPUT:

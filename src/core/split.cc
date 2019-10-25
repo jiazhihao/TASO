@@ -16,6 +16,19 @@
 #include "taso/ops.h"
 using namespace taso;
 
+void Graph::split(const TensorHandle _input, int _axis,
+                  const std::vector<int>& _sizes,
+                  TensorHandle* _outputs)
+{
+  Op op = model->get_or_create_split(*_input, _axis, _sizes);
+  add_edge(_input->op, op, _input->idx, 0);
+  for (size_t i = 0; i < _sizes.size(); i++) {
+    _outputs[i] = new Tensor(op.ptr->outputs[i]);
+    _outputs[i]->op = op;
+  }
+}
+ 
+/*
 void Graph::split(Tensor _input, int axis, int _num,
                   const int* _sizes, Tensor* outputs)
 {
@@ -29,6 +42,7 @@ void Graph::split(Tensor _input, int axis, int _num,
     outputs[i].op = op;
   }
 }
+*/
 
 /*
 void Graph::split(Tensor _input, int axis, int _num, Tensor* outputs)
@@ -44,7 +58,6 @@ void Graph::split(Tensor _input, int axis, int _num, Tensor* outputs)
   }
   Graph::split(_input, axis, _num, sizes, outputs);
 }
-*/
 
 void Graph::split(Tensor _input, int axis, int size1, int size2, Tensor* outputs)
 {
@@ -53,19 +66,17 @@ void Graph::split(Tensor _input, int axis, int size1, int size2, Tensor* outputs
   sizes[1] = size2;
   Graph::split(_input, axis, 2, sizes, outputs);
 }
+*/
 
-Op Model::get_or_create_split(Tensor _input, int axis, int n, int* sizes)
+Op Model::get_or_create_split(const Tensor& _input, int _axis,
+                              const std::vector<int>& _sizes)
 {
-  // key ordering is:
-  // axis, n, inputs[0].dim[0], ..., inputs[0].dim[axis-1],
-  // inputs[0].dim[axis+1], ..., inputs[0].dim[nDims - 1]
-  // sizes[0], ..., sizes[n-1]
-  SplitKey key(_input, axis, n, sizes);
+  SplitKey key(_input, _axis,_sizes);
   Split* splitOp;
   if (split.find(key) != split.end()) {
     splitOp = split[key];
   } else {
-    splitOp = new Split(this, _input, axis, n, sizes);
+    splitOp = new Split(this, _input, _axis, _sizes);
     measure_split_cost(splitOp);
     split[key] = splitOp;
   }
@@ -75,33 +86,33 @@ Op Model::get_or_create_split(Tensor _input, int axis, int n, int* sizes)
   return ret;
 }
 
-Op Model::get_or_create_split(Tensor _input, int axis, int n)
+Op Model::get_or_create_split(const Tensor& _input, int _axis, int _n)
 {
-  int sizes[MAX_NUM_OUTPUTS];
-  SplitInfo parent = _input.split[axis], left, right;
-  int curPos, oldPos = _input.dim[axis];
-  for (int i = n - 1; i > 0; i--) {
+  std::vector<int> sizes;
+  sizes.resize(_n);
+  SplitInfo parent = _input.split[_axis], left, right;
+  int curPos, oldPos = _input.dim[_axis];
+  for (int i = _n - 1; i > 0; i--) {
     parent.divide(left, right, curPos);
     sizes[i] = oldPos - curPos;
     oldPos = curPos;
     parent = left;
   }
   sizes[0] = oldPos;
-  Op ret = get_or_create_split(_input, axis, n, sizes);
+  Op ret = get_or_create_split(_input, _axis, sizes);
   return ret;
 }
 
-Split::Split(Model* _model, Tensor _input, int _axis, int n, int* _sizes)
-  : OpBase(_input, model, OP_SPLIT), axis(_axis)
+Split::Split(Model* _model, const Tensor& _input,
+             int _axis, const std::vector<int>& _sizes)
+  : OpBase(_input, model, OP_SPLIT), axis(_axis), sizes(_sizes)
 {
-  assert(n <= MAX_NUM_OUTPUTS);
-  numOutputs = n;
-  for (int i = 0; i < n; i++)
-    sizes[i] = _sizes[i];
+  assert(_sizes.size() <= MAX_NUM_OUTPUTS);
+  numOutputs = _sizes.size();
   SplitInfo parent = inputs[0].split[axis], left, right;
   int oldPos = inputs[0].dim[axis], curPos;
   bool misMatch = false;
-  for (int i = n - 1; i >= 0; i--) {
+  for (int i = numOutputs - 1; i >= 0; i--) {
     outputs[i].numDim = inputs[0].numDim;
     for (int j = 0; j < inputs[0].numDim; j++)
       if (j != axis) {
@@ -129,9 +140,11 @@ Split::Split(Model* _model, Tensor _input, int _axis, int n, int* _sizes)
   }
   if (misMatch) {
     // Clear split info if mismatch
-    for (int i = n - 1; i >= 0; i--)
+    for (int i = numOutputs - 1; i >= 0; i--)
       outputs[i].split[axis] = SplitInfo::NO_SPLIT;
   }
+  for (int i = 0; i < numOutputs; i++)
+    outputs[i].idx = i;
 }
 
 Split::~Split(void)
@@ -185,13 +198,14 @@ void Model::measure_split_cost(Split* split)
 
 // key ordering is:
 // axis, n, sizes[0], ..., sizes[n-1], input
-SplitKey::SplitKey(Tensor input, int axis, int n, int* sizes)
+SplitKey::SplitKey(const Tensor& input, int _axis,
+                   const std::vector<int>& _sizes)
 {
   int idx = 0;
-  keys[idx++] = axis;
-  keys[idx++] = n;
-  for (int i = 0; i < n; i++)
-    keys[idx++] = sizes[i];
+  keys[idx++] = _axis;
+  keys[idx++] = _sizes.size();
+  for (size_t i = 0; i < _sizes.size(); i++)
+    keys[idx++] = _sizes[i];
   input.serialize(keys, idx);
   while (idx < KEY_LENGTH)
     keys[idx++] = 0;

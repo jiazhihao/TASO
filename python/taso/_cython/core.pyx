@@ -352,6 +352,20 @@ cdef class PyGraph:
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
+    def split(self, PyTensor input, int axis, list sizes):
+        cdef TensorHandle coutputs[32]
+        assert len(sizes) <= 32
+        cdef vector[int] csizes
+        csizes.resize(len(sizes))
+        for i in range(len(sizes)):
+            csizes[i] = sizes[i]
+        self.p_graph.split(input.ctensor, axis, csizes, coutputs)
+        outputs = list()
+        for i in range(len(sizes)):
+            t = ctypes.cast(<unsigned long long>coutputs[i], ctypes.c_void_p)
+            outputs.append(PyTensor(t))
+        return outputs
+
     def sqrt(self, *, PyTensor input):
         cdef TensorHandle handle = self.p_graph.sqrt(input.ctensor)
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)

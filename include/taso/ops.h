@@ -574,8 +574,11 @@ public:
                      const std::vector<int>& _steps);
   TensorHandle sigmoid(const TensorHandle _input,
                        bool _inPlace = true);
-  void split(Tensor _input, int axis, int c1, int c2, Tensor* outputs);
-  void split(Tensor _input, int axis, int num, const int* sizes, Tensor* outputs);
+  //void split(Tensor _input, int axis, int c1, int c2, Tensor* outputs);
+  //void split(Tensor _input, int axis, int num, const int* sizes, Tensor* outputs);
+  void split(const TensorHandle _input, int _axis,
+             const std::vector<int>& _sizes,
+             TensorHandle* _outputs);
   TensorHandle sqrt(const TensorHandle _input);
   TensorHandle squeeze(const TensorHandle input, const std::vector<int>& axes);
   TensorHandle transpose(const TensorHandle _input,
@@ -962,7 +965,7 @@ public:
 
 class Split : public OpBase {
 public:
-  Split(Model* _model, Tensor _input, int axis, int n, int* sizes);
+  Split(Model* _model, const Tensor& _input, int axis, const std::vector<int>& _sizes);
   ~Split(void);
   bool get_int_parameter(PMParameter para, int*);
   void forward(bool block);
@@ -971,7 +974,7 @@ public:
   void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
 public:
   int axis;
-  int sizes[MAX_NUM_OUTPUTS];
+  std::vector<int> sizes;
 };
 
 class Squeeze : public OpBase {
@@ -1189,7 +1192,7 @@ struct SqueezeKey {
 
 struct SplitKey {
   static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + MAX_NUM_OUTPUTS + 2;
-  SplitKey(Tensor input, int axis, int n, int* channels);
+  SplitKey(const Tensor& _input, int _axis, const std::vector<int>& _sizes);
   int keys[KEY_LENGTH];
 };
 
@@ -1254,8 +1257,8 @@ public:
                          const std::vector<int>& _axes,
                          const std::vector<int>& _steps);
   Op get_or_create_squeeze(const Tensor& input, const std::vector<int>& axes);
-  Op get_or_create_split(Tensor _input, int axis, int n, int* channels);
-  Op get_or_create_split(Tensor _input, int axis, int n);
+  Op get_or_create_split(const Tensor& _input, int _axis, const std::vector<int>& _sizes);
+  Op get_or_create_split(const Tensor& _input, int axis, int n);
   Op get_or_create_topk(const Tensor& _input, int _axis, int _numk,
                         bool _largest, bool _sorted);
   Op get_or_create_transpose(Tensor _input, const std::vector<int>& _perm,
