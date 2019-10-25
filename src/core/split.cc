@@ -27,7 +27,18 @@ void Graph::split(const TensorHandle _input, int _axis,
     _outputs[i]->op = op;
   }
 }
- 
+
+void Graph::split_equal(const TensorHandle _input, int _axis,
+                        int _num, TensorHandle* _outputs)
+{
+  // assert the dimension can be equally split
+  assert(_input->dim[_axis] % _num == 0);
+  std::vector<int> sizes;
+  for (int i = 0; i < _num; i++)
+    sizes.push_back(_input->dim[_axis] / _num);
+  split(_input, _axis, sizes, _outputs);
+}
+
 /*
 void Graph::split(Tensor _input, int axis, int _num,
                   const int* _sizes, Tensor* outputs)

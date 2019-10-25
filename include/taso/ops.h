@@ -579,6 +579,8 @@ public:
   void split(const TensorHandle _input, int _axis,
              const std::vector<int>& _sizes,
              TensorHandle* _outputs);
+  void split_equal(const TensorHandle _input, int _axis,
+                   int _num, TensorHandle* _outputs);
   TensorHandle sqrt(const TensorHandle _input);
   TensorHandle squeeze(const TensorHandle input, const std::vector<int>& axes);
   TensorHandle transpose(const TensorHandle _input,

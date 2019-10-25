@@ -233,6 +233,8 @@ cdef extern from "taso/ops.h" namespace "taso":
                             bool _inplace)
         void split(const TensorHandle input, int axis,
                    const vector[int] sizes, TensorHandle* outputs)
+        void split_equal(const TensorHandle input, int axis,
+                         int num, TensorHandle* outputs)
         TensorHandle sqrt(const TensorHandle input)
         TensorHandle squeeze(const TensorHandle input,
                               const vector[int] axes)
