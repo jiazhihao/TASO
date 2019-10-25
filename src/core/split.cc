@@ -133,7 +133,7 @@ Split::Split(Model* _model, const Tensor& _input,
       } else {
         outputs[i].dim[j] = _sizes[i];
         outputs[i].stride[j] = inputs[0].stride[j];
-        if (i > 0) {
+        if (i > 0 && parent.num > 0) {
           parent.divide(left, right, curPos);
         } else {
           curPos = 0;
