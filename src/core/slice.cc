@@ -87,7 +87,7 @@ Slice::Slice(Model* _model, const Tensor& _input,
     } else {
       int start_pos = min(_start[idx], _input.dim[i]);
       int end_pos = min(_end[idx], _input.dim[i]);
-      int dim_size = (end_pos - start_pos) / _steps[idx] + 1;
+      int dim_size = (end_pos - start_pos - 1) / _steps[idx] + 1;
       outputs[0].dim[i] = dim_size;
       outputs[0].split[i] = SplitInfo::NO_SPLIT;
       outputs[0].stride[i] = total;
