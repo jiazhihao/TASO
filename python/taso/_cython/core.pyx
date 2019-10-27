@@ -352,7 +352,7 @@ cdef class PyGraph:
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
-    def slice(self, *, PyTensor input, start, end, axes, steps):
+    def slice(self, PyTensor input, start, end, axes, steps):
         cdef vector[int] cstart
         cdef vector[int] cend
         cdef vector[int] caxes
