@@ -352,6 +352,27 @@ cdef class PyGraph:
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
+    def slice(self, *, PyTensor input, start, end, axes, steps):
+        cdef vector[int] cstart
+        cdef vector[int] cend
+        cdef vector[int] caxes
+        cdef vector[int] csteps
+        cstart.resize(len(start))
+        cend.resize(len(end))
+        caxes.resize(len(axes))
+        csteps.resize(len(steps))
+        for i in range(len(start)):
+            cstart[i] = start[i]
+        for i in range(len(end)):
+            cend[i] = end[i]
+        for i in range(len(axes)):
+            caxes[i] = axes[i]
+        for i in range(len(steps)):
+            csteps[i] = steps[i]
+        cdef TensorHandle handle = self.p_graph.slice(input.ctensor, cstart, cend, caxes, csteps)
+        t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
+        return PyTensor(t)
+
     def split(self, PyTensor input, int axis, sizes):
         cdef TensorHandle coutputs[32]
         cdef vector[int] csizes
