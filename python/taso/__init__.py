@@ -488,7 +488,13 @@ def _slice(op, graph, tensors, initializer):
     assert len(inputs) >= 3, "Slice requires at least 3 inputs"
     assert len(inputs) <= 5, "Slice takes at most 5 inputs"
     start = _get_list_from_initializer(initializer, op.input[1])
+    # replace INT_MAX with 999999
+    for i in range(len(start)):
+        start[i] = min(999999, start[i])
     end = _get_list_from_initializer(initializer, op.input[2])
+    # replace INT_MAX with 999999
+    for i in range(len(end)):
+        end[i] = min(999999, end[i])
     if len(op.input) > 3:
         axes = _get_list_from_initializer(initializer, op.input[3])
     else:
