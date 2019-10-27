@@ -91,6 +91,21 @@ def _get_conv_pool_pads_attr(attrs):
         pads = "SAME"
     return pads
 
+def _get_list_from_initializer(initializer, name):
+    for data in initializer:
+        if data.name == name:
+            ret = list()
+            if data.int64_data != []:
+                for dim in data.int64_data:
+                    ret.append(dim)
+            elif data.raw_data and data.raw_data != []:
+                ret_in_array = numpy_helper.to_array(data)
+                for dim in ret_in_array:
+                        ret.append(dim)
+            return ret
+    raise InputNotFoundError
+    return []
+
 def _get_inputs(op, graph, tensors, initializer):
     inputs = list()
     for i in op.input:
