@@ -130,23 +130,23 @@ def _add(op, graph, tensors, initializer):
     return outputs
 
 def _argmax(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "ArgMax requires exactly one input"
-    assert op.input[0] in tensors
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "ArgMax requires exactly one input"
     attrs = _parse_attribute(op.attribute)
     keepdims = attrs["keepdims"]
     axis = attrs["axis"]
     axes_list = [axis]
-    outputs = graph.reduce_argmax(input=tensors[op.input[0]], axes=tuple(axes_list), keepdims=keepdims)
+    outputs = graph.reduce_argmax(input=inputs[0], axes=tuple(axes_list), keepdims=keepdims)
     return outputs
 
 def _argmin(op, graph, tensors, initializer):
-    assert len(op.input) == 1, "ArgMin requires exactly one input"
-    assert op.input[0] in tensors
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "ArgMin requires exactly one input"
     attrs = _parse_attribute(op.attribute)
     keepdims = attrs["keepdims"]
     axis = attrs["axis"]
     axes_list = [axis]
-    outputs = graph.reduce_argmin(input=tensors[op.input[0]], axes=tuple(axes_list), keepdims=keepdims)
+    outputs = graph.reduce_argmin(input=inputs[0], axes=tuple(axes_list), keepdims=keepdims)
     return outputs
 
 def _batchnorm(op, graph, tensors, initializer):
@@ -176,7 +176,6 @@ def _cast(op, graph, tensors, initializer):
 def _ceil(op, graph, tensors, initializer):
     inputs = _get_inputs(op, graph, tensors, initializer)
     assert len(inputs) == 1, "Ceil requires exactly one input"
-    assert op.input[0] in tensors
     attrs = _parse_attribute(op.attribute)
     outputs = graph.ceil(inputs[0])
     return outputs
@@ -486,8 +485,8 @@ def _size(op, graph, tensors, initializer):
 
 def _slice(op, graph, tensors, initializer):
     inputs = _get_inputs(op, graph, tensors, initializer)
-    assert len(op.input) >= 3, "Slice requires at least 3 inputs"
-    assert len(op.input) <= 5, "Slice takes at most 5 inputs"
+    assert len(inputs) >= 3, "Slice requires at least 3 inputs"
+    assert len(inputs) <= 5, "Slice takes at most 5 inputs"
     start = _get_list_from_initializer(initializer, op.input[1])
     end = _get_list_from_initializer(initializer, op.input[2])
     if len(op.input) > 3:
@@ -498,7 +497,6 @@ def _slice(op, graph, tensors, initializer):
         steps = _get_list_from_initializer(initializer, op.input[4])
     else:
         steps = None
-    assert op.input[0] in tensors
     outputs = graph.slice(inputs[0], start, end, axes, steps)
     return outputs
 
