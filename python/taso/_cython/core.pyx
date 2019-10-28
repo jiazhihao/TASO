@@ -352,14 +352,49 @@ cdef class PyGraph:
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
-    def split(self, PyTensor input, int axis, list sizes):
+    def slice(self, PyTensor input, start, end, axes, steps):
+        cdef vector[int] cstart
+        cdef vector[int] cend
+        cdef vector[int] caxes
+        cdef vector[int] csteps
+        cstart.resize(len(start))
+        for i in range(len(start)):
+            cstart[i] = start[i]
+        cend.resize(len(end))
+        for i in range(len(end)):
+            cend[i] = end[i]
+        if axes: 
+            caxes.resize(len(axes))
+            for i in range(len(axes)):
+                caxes[i] = axes[i]
+        else:
+            caxes.resize(len(start))
+            for i in range(len(start)):
+                caxes[i] = i
+        if steps:
+            csteps.resize(len(steps))
+            for i in range(len(steps)):
+                csteps[i] = steps[i]
+        else:
+            csteps.resize(len(start))
+            for i in range(len(start)):
+                csteps[i] = 1
+        cdef TensorHandle handle = self.p_graph.slice(input.ctensor, cstart, cend, caxes, csteps)
+        t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
+        return PyTensor(t)
+
+    def split(self, PyTensor input, int axis, sizes):
         cdef TensorHandle coutputs[32]
-        assert len(sizes) <= 32
         cdef vector[int] csizes
-        csizes.resize(len(sizes))
-        for i in range(len(sizes)):
-            csizes[i] = sizes[i]
-        self.p_graph.split(input.ctensor, axis, csizes, coutputs)
+        if type(sizes) is list:
+            assert len(sizes) <= 32
+            csizes.resize(len(sizes))
+            for i in range(len(sizes)):
+                csizes[i] = sizes[i]
+            self.p_graph.split(input.ctensor, axis, csizes, coutputs)
+        else:
+            # sizes is an integer
+            self.p_graph.split_equal(input.ctensor, axis, sizes, coutputs)
         outputs = list()
         for i in range(len(sizes)):
             t = ctypes.cast(<unsigned long long>coutputs[i], ctypes.c_void_p)

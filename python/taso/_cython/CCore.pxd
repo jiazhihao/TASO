@@ -231,8 +231,15 @@ cdef extern from "taso/ops.h" namespace "taso":
         TensorHandle shape(const TensorHandle input, OpType type)
         TensorHandle sigmoid(const TensorHandle input,
                             bool _inplace)
+        TensorHandle slice(const TensorHandle input,
+                           const vector[int] start,
+                           const vector[int] end,
+                           const vector[int] axse,
+                           const vector[int] steps)
         void split(const TensorHandle input, int axis,
                    const vector[int] sizes, TensorHandle* outputs)
+        void split_equal(const TensorHandle input, int axis,
+                         int num, TensorHandle* outputs)
         TensorHandle sqrt(const TensorHandle input)
         TensorHandle squeeze(const TensorHandle input,
                               const vector[int] axes)

@@ -385,7 +385,7 @@ Graph* Graph::preprocess_weights(void)
         // Preprocess weights
         // Currently assume the op has single output
         Op op = opIt->first;
-        assert(op.ptr->numOutputs == 1);
+        //assert(op.ptr->numOutputs == 1);
         // map and execute the operator to get the output weights
         for (it = list.begin(); it != list.end(); it++) {
           assert(it->srcOp.ptr->outputs[it->srcIdx].data_ptr != NULL);
