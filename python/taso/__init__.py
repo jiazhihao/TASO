@@ -512,13 +512,15 @@ def _split(op, graph, tensors, initializer):
     attrs = _parse_attribute(op.attribute)
     axis = attrs["axis"]
     split_ints = attrs["split"]
-    split_list = list()
-    try:
+    if type(split_ints) is not list:
+        origin_dim = inputs[0].dim(axis)
+        split_list = [int(origin_dim / split_ints)] * split_ints
+        outputs = graph.split(inputs[0], axis, split_list)
+    else:
+        split_list = list()
         for i in split_ints:
             split_list.append(i)
-    except TypeError:
-        split_list = split_ints
-    outputs = graph.split(inputs[0], axis, split_list)
+        outputs = graph.split(inputs[0], axis, split_list)
     return outputs
 
 def _sqrt(op, graph, tensors, initializer):
