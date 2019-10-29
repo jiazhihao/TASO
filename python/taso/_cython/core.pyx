@@ -101,6 +101,56 @@ cdef class PyTensor:
             assert False , "Error: index out of range"
             return None
 
+# Construct operator table
+op_table = dict()
+op_table[OP_INPUT] = "Input"
+op_table[OP_WEIGHT] = "Weight"
+op_table[OP_CONV2D] = "Conv"
+op_table[OP_DROPOUT] = "Dropout"
+op_table[OP_POOL2D_MAX] = "MaxPool"
+op_table[OP_POOL2D_AVG] = "AveragePool"
+op_table[OP_RELU] = "Relu"
+op_table[OP_SIGMOID] = "Sigmoid"
+op_table[OP_TANH] = "Tanh"
+op_table[OP_BATCHNORM] = "BatchNormalization"
+op_table[OP_CONCAT] = "Concat"
+op_table[OP_SPLIT] = "Split"
+op_table[OP_RESHAPE] = "Reshape"
+op_table[OP_TRANSPOSE] = "Transpose"
+op_table[OP_EW_ADD] = "Add"
+op_table[OP_EW_MUL] = "Mul"
+op_table[OP_MATMUL] = "Matmul"
+op_table[OP_SQUEEZE] = "Squeeze"
+op_table[OP_UNSQUEEZE] = "Unsqueeze"
+op_table[OP_EW_SUB] = "Sub"
+op_table[OP_EW_DIV] = "Div"
+op_table[OP_EW_EQUAL] = "Equal"
+op_table[OP_EW_GREATER] = "Greater"
+op_table[OP_EW_LESS] = "Less"
+op_table[OP_EW_MAX] = "Max"
+op_table[OP_EW_MIN] = "Min"
+op_table[OP_REDUCE_ARGMAX] = "ArgMax"
+op_table[OP_REDUCE_ARGMIN] = "ArgMin"
+op_table[OP_REDUCE_MAX] = "ReduceMax"
+op_table[OP_REDUCE_MEAN] = "ReduceMean"
+op_table[OP_REDUCE_MIN] = "ReduceMin"
+op_table[OP_REDUCE_PROD] = "ReduceProd"
+op_table[OP_REDUCE_SUM] = "ReduceSum"
+op_table[OP_PAD] = "Pad"
+op_table[OP_SHAPE] = "Shape"
+op_table[OP_SIZE] = "Size"
+op_table[OP_TOPK] = "TopK"
+op_table[OP_WHERE] = "Where"
+op_table[OP_CEIL] = "Ceil"
+op_table[OP_CAST] = "Cast"
+op_table[OP_EXP] = "Exp"
+op_table[OP_ROUND] = "Round"
+op_table[OP_LOG] = "Log"
+op_table[OP_LOGICAL_NOT] = "Not"
+op_table[OP_SQRT] = "Sqrt"
+op_table[OP_SLICE] = "Slice"
+op_table[OP_RESIZE] = "Resize"
+
 cdef class PyGraph:
     cdef Graph *p_graph #Hold a Graph instance
 
@@ -111,7 +161,6 @@ cdef class PyGraph:
         else:
             ptr = ctypes.cast(graph, ctypes.c_void_p).value
             self.p_graph = <Graph*>(ptr)
-
     def print_measurements(self):
         self.p_graph.print_measurements()
 
@@ -530,41 +579,9 @@ cdef class PyGraph:
 
     def get_operator_type(self, Op op):
         cdef OpType type = self.p_graph.get_operator_type(op.guid)
-        if type == OP_INPUT:
-            return "Input"
-        elif type == OP_WEIGHT:
-            return "Weight"
-        elif type == OP_EW_ADD:
-            return "Add"
-        elif type == OP_BATCHNORM:
-            return "BatchNormalization"
-        elif type == OP_EW_MUL:
-            return "Mul"
-        elif type == OP_CONCAT:
-            return "Concat"
-        elif type == OP_CONV2D:
-            return "Conv"
-        elif type == OP_DROPOUT:
-            return "Dropout"
-        elif type == OP_MATMUL:
-            return "Matmul"
-        elif type == OP_RESHAPE:
-            return "Reshape"
-        elif type == OP_RELU:
-            return "Relu"
-        elif type == OP_SIGMOID:
-            return "Sigmoid"
-        elif type == OP_SPLIT:
-            return "Split"
-        elif type == OP_TANH:
-            return "Tanh"
-        elif type == OP_TRANSPOSE:
-            return "Transpose"
-        elif type == OP_POOL2D_MAX:
-            return "MaxPool"
-        elif type == OP_POOL2D_AVG:
-            return "AveragePool"
-        else:           
+        if type in op_table:
+            return op_table[type]
+        else:
             assert False, 'Undefined type: {}'.format(type)
             return "Undefined"
 
@@ -615,5 +632,8 @@ cdef class PyGraph:
                 perIdx = perIdx // len(dims)
             perm = tuple(dims)
             return perm
+        elif attrname == 'axes':
+            # FIXME
+            return [0]
         else:
            assert False, 'Internal error: unknow attribute {}'.format(attrname)
