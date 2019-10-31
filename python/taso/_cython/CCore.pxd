@@ -252,7 +252,7 @@ cdef extern from "taso/ops.h" namespace "taso":
                                const vector[int] axes)
         TensorHandle new_input(int ndim, const int* dims)
         TensorHandle new_weight(int ndim, const int* dims, const float* data)
-        Graph* optimize(float alpha, int budget)
+        Graph* optimize(float alpha, int budget, bool print_subst)
         int get_operator_list(Op* ops, size_t maxNumOps)
         int get_input_edges(Edge* edges, size_t guid)
         OpType get_operator_type(size_t guid)

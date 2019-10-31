@@ -211,6 +211,118 @@ bool OpBase::get_input_parameter(TNParameter tnp, DIMParameter dim, int* value)
   return true;
 }
 
+std::string Op::op_to_string(const OpBase* ptr)
+{
+  switch (ptr->type) {
+    case OP_INPUT:
+      return "Input";
+    case OP_WEIGHT:
+      return "Weight";
+    case OP_ANY:
+      return "Any";
+    case OP_CONV2D:
+      return "Conv";
+    case OP_DROPOUT:
+      return "Dropout";
+    case OP_LINEAR:
+      return "Linear";
+    case OP_POOL2D_MAX:
+      return "MaxPool";
+    case OP_POOL2D_AVG:
+      return "AveragePool";
+    case OP_RELU:
+      return "Relu";
+    case OP_SIGMOID:
+      return "Sigmoid";
+    case OP_TANH:
+      return "TanH";
+    case OP_BATCHNORM:
+      return "Batchnorm";
+    case OP_CONCAT:
+      return "Concat";
+    case OP_SPLIT:
+      return "Split";
+    case OP_RESHAPE:
+      return "Reshape";
+    case OP_TRANSPOSE:
+      return "Transpose";
+    case OP_EW_ADD:
+      return "Add";
+    case OP_EW_MUL:
+      return "Mul";
+    case OP_MATMUL:
+      return "Matmul";
+    case OP_MUL:
+      return "Mul";
+    case OP_ENLARGE:
+      return "Enlarge";
+    case OP_SQUEEZE:
+      return "Squeeze";
+    case OP_UNSQUEEZE:
+      return "Unsqueeze";
+    case OP_EW_SUB:
+      return "Sub";
+    case OP_EW_DIV:
+      return "Div";
+    case OP_EW_EQUAL:
+      return "Equal";
+    case OP_EW_GREATER:
+      return "Greater";
+    case OP_EW_LESS:
+      return "Less";
+    case OP_EW_MAX:
+      return "Max";
+    case OP_EW_MIN:
+      return "Min";
+    case OP_REDUCE_ARGMAX:
+      return "ArgMax";
+    case OP_REDUCE_ARGMIN:
+      return "ArgMin";
+    case OP_REDUCE_MAX:
+      return "ReduceMax";
+    case OP_REDUCE_MEAN:
+      return "ReduceMean";
+    case OP_REDUCE_MIN:
+      return "ReduceMin";
+    case OP_REDUCE_PROD:
+      return "ReduceProd";
+    case OP_REDUCE_SUM:
+      return "ReduceSum";
+    case OP_PAD:
+      return "Pad";
+    case OP_SHAPE:
+      return "Shape";
+    case OP_SIZE:
+      return "Size";
+    case OP_TOPK:
+      return "TopK";
+    case OP_WHERE:
+      return "Where";
+    case OP_CEIL:
+      return "Ceil";
+    case OP_CAST:
+      return "Cast";
+    case OP_EXP:
+      return "Exp";
+    case OP_ROUND:
+      return "Round";
+    case OP_LOG:
+      return "Log";
+    case OP_LOGICAL_NOT:
+      return "Not";
+    case OP_SQRT:
+      return "Sqrt";
+    case OP_LEAKYRELU:
+      return "LeakyRelu";
+    case OP_SLICE:
+      return "Slice";
+    case OP_RESIZE:
+      return "Resize";
+    default:
+      return "Unknown_" + std::to_string(ptr->type);
+  }
+}
+
 static Model* model_singleton = NULL;
 
 Graph::Graph()
@@ -262,7 +374,7 @@ TensorHandle Graph::new_weight(const Tensor& weight)
   return t;
 }
 
-Graph* Graph::optimize(float alpha, int budget)
+Graph* Graph::optimize(float alpha, int budget, bool print_subst)
 {
   std::vector<GraphXfer*> xfers;
   for (int i = 1; i < 3; i++)
@@ -351,13 +463,26 @@ Graph* Graph::optimize(float alpha, int budget)
   //printf("Optimized graph: end-to-end execution time =\n");
   //printf("%.8lf ms (average of 100 runs)\n", bestGraph->run());
   bestGraph->print_costs();
-
+  if (print_subst) {
+    printf("        ===== Applied Substitutions =====\n\n");
+    for (size_t i = 0; i < bestGraph->subst_history.size(); i++) {
+      printf("        substitution[%03zu]: \n", i);
+      Graph::GraphSubst subst = bestGraph->subst_history[i];
+      for (size_t j = 0; j < subst.srcOps.size(); j++) {
+        printf("            srcOp[%zu]: %s\n", j, subst.srcOps[j].to_string().c_str());
+      }
+      for (size_t j = 0; j < subst.dstOps.size(); j++) {
+        printf("            dstOp[%zu]: %s\n", j, subst.dstOps[j].to_string().c_str());
+      }
+    }
+  }
   return bestGraph;
 }
 
 Graph* Graph::preprocess_weights(void)
 {
   Graph* newGraph = new Graph();
+  newGraph->subst_history = subst_history;
   std::map<Op, std::set<Edge, EdgeCompare>, OpCompare>::const_iterator opIt;
   // Step 1: clone the input graph
   for (opIt = inEdges.begin(); opIt != inEdges.end(); opIt++)

@@ -66,6 +66,67 @@ enum {
   GUID_PRESERVED = 19,
 };
 
+//This must be consistent with python/taso/_cython/CCore.pxd
+enum OpType {
+  OP_INPUT,
+  OP_WEIGHT,
+  OP_ANY,
+  OP_CONV2D,
+  OP_DROPOUT,
+  OP_LINEAR,
+  OP_POOL2D_MAX,
+  OP_POOL2D_AVG,
+  OP_RELU,
+  OP_SIGMOID,
+  OP_TANH,
+  OP_BATCHNORM,
+  OP_CONCAT,
+  OP_SPLIT,
+  OP_RESHAPE,
+  OP_TRANSPOSE,
+  OP_EW_ADD,
+  OP_EW_MUL,
+  OP_MATMUL,
+  OP_MUL,
+  OP_ENLARGE,
+  OP_MERGE_GCONV,
+  OP_CONSTANT_IMM,
+  OP_CONSTANT_ICONV,
+  OP_CONSTANT_ONE,
+  OP_CONSTANT_POOL,
+  OP_SQUEEZE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Squeeze
+  OP_UNSQUEEZE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Unsqueeze
+  OP_EW_SUB, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Sub
+  OP_EW_DIV, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Div
+  OP_EW_EQUAL, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Equal
+  OP_EW_GREATER, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Greater
+  OP_EW_LESS, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Less
+  OP_EW_MAX, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Max
+  OP_EW_MIN, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Min
+  OP_REDUCE_ARGMAX, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ArgMax
+  OP_REDUCE_ARGMIN, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ArgMin
+  OP_REDUCE_MAX, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ReduceMax
+  OP_REDUCE_MEAN, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ReduceMean
+  OP_REDUCE_MIN, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ReduceMin
+  OP_REDUCE_PROD, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ReduceProd
+  OP_REDUCE_SUM, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ReduceSum
+  OP_PAD, //https://github.com/dmlc/tvm/blob/master/topi/python/topi/nn/pad.py
+  OP_SHAPE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Shape
+  OP_SIZE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Size
+  OP_TOPK, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#TopK
+  OP_WHERE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Where
+  OP_CEIL, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Ceil
+  OP_CAST, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Cast
+  OP_EXP, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Exp
+  OP_ROUND, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Round
+  OP_LOG, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Log
+  OP_LOGICAL_NOT, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Not
+  OP_SQRT, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Sqrt
+  OP_LEAKYRELU,
+  OP_SLICE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Slice
+  OP_RESIZE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Resize
+};
+
 struct Op {
   Op(void);
   Op(size_t _guid, OpBase* _ptr)
@@ -90,6 +151,16 @@ struct Op {
     guid = op.guid;
     ptr = op.ptr;
     return *this;
+  }
+  std::string op_to_string(const OpBase* ptr);
+  std::string to_string(void)
+  {
+    if (ptr != NULL) {
+      return op_to_string(ptr) + "_" + std::to_string(guid);
+    }
+    else {
+      return "UnmappedOp_" + std::to_string(guid);
+    }
   }
   static const Op INVALID_OP;
   size_t guid;
@@ -345,67 +416,6 @@ enum DIMParameter {
   DIM_ND = 310,
 };
 
-//This must be consistent with python/taso/_cython/CCore.pxd
-enum OpType {
-  OP_INPUT,
-  OP_WEIGHT,
-  OP_ANY,
-  OP_CONV2D,
-  OP_DROPOUT,
-  OP_LINEAR,
-  OP_POOL2D_MAX,
-  OP_POOL2D_AVG,
-  OP_RELU,
-  OP_SIGMOID,
-  OP_TANH,
-  OP_BATCHNORM,
-  OP_CONCAT,
-  OP_SPLIT,
-  OP_RESHAPE,
-  OP_TRANSPOSE,
-  OP_EW_ADD,
-  OP_EW_MUL,
-  OP_MATMUL,
-  OP_MUL,
-  OP_ENLARGE,
-  OP_MERGE_GCONV,
-  OP_CONSTANT_IMM,
-  OP_CONSTANT_ICONV,
-  OP_CONSTANT_ONE,
-  OP_CONSTANT_POOL,
-  OP_SQUEEZE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Squeeze
-  OP_UNSQUEEZE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Unsqueeze
-  OP_EW_SUB, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Sub
-  OP_EW_DIV, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Div
-  OP_EW_EQUAL, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Equal
-  OP_EW_GREATER, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Greater
-  OP_EW_LESS, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Less
-  OP_EW_MAX, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Max
-  OP_EW_MIN, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Min
-  OP_REDUCE_ARGMAX, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ArgMax
-  OP_REDUCE_ARGMIN, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ArgMin
-  OP_REDUCE_MAX, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ReduceMax
-  OP_REDUCE_MEAN, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ReduceMean
-  OP_REDUCE_MIN, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ReduceMin
-  OP_REDUCE_PROD, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ReduceProd
-  OP_REDUCE_SUM, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#ReduceSum
-  OP_PAD, //https://github.com/dmlc/tvm/blob/master/topi/python/topi/nn/pad.py
-  OP_SHAPE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Shape
-  OP_SIZE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Size
-  OP_TOPK, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#TopK
-  OP_WHERE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Where
-  OP_CEIL, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Ceil
-  OP_CAST, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Cast
-  OP_EXP, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Exp
-  OP_ROUND, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Round
-  OP_LOG, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Log
-  OP_LOGICAL_NOT, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Not
-  OP_SQRT, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Sqrt
-  OP_LEAKYRELU,
-  OP_SLICE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Slice
-  OP_RESIZE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Resize
-};
-
 //That this must be consistent with python/taso/_cython/CCore.pxd
 enum ActiMode {
   AC_MODE_NONE,
@@ -598,7 +608,7 @@ public:
 
   // Helper Functions for Cython
   Op find_op_or_fail(size_t guid);
-  Graph* optimize(float alpha, int budget);
+  Graph* optimize(float alpha, int budget, bool print_subst);
   Graph* preprocess_weights(void);
   int get_operator_list(Op* opList, size_t maxNumOps);
   int get_input_edges(Edge* opList, size_t guid);
@@ -629,9 +639,13 @@ private:
   TensorHandle input_wrapper(const TensorHandle _input);
   TensorHandle weight_wrapper(const TensorHandle _weight);
 public:
-  std::map<Op, std::set<Edge, EdgeCompare>, OpCompare> inEdges, outEdges;
   Model *model;
   float totalCost;
+  std::map<Op, std::set<Edge, EdgeCompare>, OpCompare> inEdges, outEdges;
+  struct GraphSubst {
+    std::vector<Op> srcOps, dstOps;
+  };
+  std::vector<GraphSubst> subst_history;
 };
 
 class Constant : public OpBase {

@@ -66,6 +66,7 @@ struct TensorXCompare {
 
 class OpX {
 public:
+  OpX(const OpX& _op);
   OpX(OpType _type, TensorX input0, int numOutputs = 1);
   OpX(OpType _type, TensorX input0, TensorX input1);
   OpX(OpType _type, TensorX input0, TensorX input1, TensorX input2, TensorX input3, TensorX input4);

@@ -447,6 +447,11 @@ Tensor TensorX::to_tensor(const GraphXfer* xfer) const
 //  if (e.op != NULL) e.op->numOutEdges ++;
 //}
 
+OpX::OpX(const OpX& _op)
+: type(_op.type), mapOp(_op.mapOp), inputs(_op.inputs), outputs(_op.outputs),
+  pmConstraints(_op.pmConstraints), tnConstraints(_op.tnConstraints)
+{}
+
 OpX::OpX(OpType _type, TensorX in1, int numOutputs)
 : type(_type)
 {
@@ -1077,6 +1082,17 @@ void GraphXfer::run(int depth, Graph* graph,
 Graph* GraphXfer::create_new_graph(Graph* graph)
 {
   Graph* newGraph = new Graph();
+  newGraph->subst_history = graph->subst_history;
+  Graph::GraphSubst subst;
+  for (size_t i = 0; i < srcOps.size(); i++) {
+    Op op = srcOps[i]->mapOp;
+    subst.srcOps.push_back(op);
+  }
+  for (size_t i = 0; i < dstOps.size(); i++) {
+    Op op = dstOps[i]->mapOp;
+    subst.dstOps.push_back(op);
+  }
+  newGraph->subst_history.push_back(subst);
   // Step 1: map dst ops
   std::map<Op, std::set<Edge, EdgeCompare>, OpCompare>::const_iterator opIt;
   std::vector<OpX*>::const_iterator dstIt;
