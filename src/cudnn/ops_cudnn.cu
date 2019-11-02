@@ -78,7 +78,12 @@ float Model::measure_oplist_runtime(const std::vector<OpBase*>& opBaseList)
 void* Model::allocate_memory(size_t size, const DATATYPE* data_initial)
 {
   void* ptr;
-  checkCUDA(cudaMalloc(&ptr, size));
+  if (size == 0) {
+    // Note: Special value for zero-sized tensor
+    ptr = (void*) 0x1;
+  } else {
+    checkCUDA(cudaMalloc(&ptr, size));
+  }
   if (data_initial != NULL) {
     checkCUDA(cudaMemcpy(ptr, data_initial, size, cudaMemcpyDefault));
   }
