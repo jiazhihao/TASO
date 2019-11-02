@@ -263,4 +263,5 @@ cdef extern from "taso/ops.h" namespace "taso":
         int get_split_lens(size_t guid, int* lens)
         int get_output_dims(size_t guid, int* dims, int idx)
         void print_measurements()
+        float total_cost()
         float run()

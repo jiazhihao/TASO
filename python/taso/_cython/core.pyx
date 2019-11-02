@@ -167,6 +167,9 @@ cdef class PyGraph:
     def run_time(self):
         return self.p_graph.run()
 
+    def cost(self):
+        return self.p_graph.total_cost()
+
     #def __dealloc__(self):
         #t = ctypes.cast(<unsigned long long>self.p_graph, ctypes.c_void_p)
         #print(t)
