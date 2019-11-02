@@ -745,7 +745,7 @@ def load_onnx(filename):
                     assert _check_output(outputs[i], op.output[i])
                     tensors[op.output[i]] = outputs[i]
             except InputNotFoundError:
-                print("Cannot find input tensor for operator: {} (Skipped)".format(op.op_type))
+                print("Cannot find input tensor for operator: name({}) type({}) (Skipped)".format(opname, op.op_type))
                 continue
         else:
             print("Found unsupported ONNX operator: {} (Skipped)".format(op.op_type))
