@@ -83,6 +83,9 @@ def _get_conv_pool_pads_attr(attrs):
             pads = "SAME"
         if padding != 'NOTSET':
             return pads
+    # Assume zero padding if the pads are missing
+    if "pads" not in attrs:
+        attrs['pads'] = [0 for i in range(len(attrs['kernel_shape'])*2)]
     # Note that we always think conv1x1 has SAME padding
     # This will allow fusing enlarged convs
     if sum(attrs["pads"]) == 0 and sum(attrs['kernel_shape']) > 2:
@@ -700,7 +703,12 @@ def load_onnx(filename):
     # Reorder nodes to satisfy data dependencies
     tensor_owner = dict()
     name_to_op = dict()
+    idx = 0
     for op in model.graph.node:
+        # Assign a name to the node if empty
+        if len(op.name) == 0:
+            op.name = op.op_type + '_' + str(idx)
+        idx += 1
         name_to_op[op.name] = op
         for output in op.output:
             tensor_owner[output] = op.name
@@ -733,7 +741,7 @@ def load_onnx(filename):
     cnt = 0
     for opname in node_list:
         op = name_to_op[opname]
-        print(cnt, op.op_type)
+        #print(cnt, op.op_type, opname)
         cnt += 1
         if op.op_type in xf_operators:
             try:

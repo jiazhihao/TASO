@@ -77,7 +77,7 @@ void helperSetBroadcastableTensorDescriptor(const Tensor& input,
       strides[output.numDim-1-i] = input.stride[input.numDim-1-i];
     } else {
       if (dims[output.numDim-1-i] > 1) {
-        fprintf(stderr, "cuDNN does noot suppoort zero stride for broadcast\n"
+        fprintf(stderr, "cuDNN does not suppoort zero stride for broadcast\n"
                 "Consider switch to other library for broadcastable operators.\n");
         assert(false);
       }
