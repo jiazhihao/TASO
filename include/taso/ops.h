@@ -682,6 +682,8 @@ public:
   cudnnActivationDescriptor_t actiDesc;
   cudnnConvolutionDescriptor_t convDesc;
   cudnnConvolutionFwdAlgo_t fwdAlgo;
+  cudnnConvolutionBwdFilterAlgo_t bwdFilterAlgo;
+  cudnnConvolutionBwdDataAlgo_t bwdDataAlgo;
 #endif
 #ifdef USE_MKL
   std::vector<dnnPrimitive_t> compList;

@@ -157,6 +157,12 @@ void Model::measure_pool2d_cost(Pool2D* pool)
           &alpha, outputTensor, outputPtr,
           &beta, outputTensor, outputPtr));
     }
+    // Backward computation
+    checkCUDNN(cudnnPoolingBackward(dnn, poolDesc,
+        &alpha, outputTensor, outputPtr,
+        outputTensor, outputPtr,
+        inputTensor, inputPtr,
+        &beta, inputTensor, inputPtr));
   }
   checkCUDA(cudaEventRecord(endEvent));
   checkCUDA(cudaEventSynchronize(endEvent));

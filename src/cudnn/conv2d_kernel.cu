@@ -176,20 +176,45 @@ void Model::measure_conv2d_cost(Conv2D* conv)
   assert(filterSize < MAX_TENSOR_SIZE);
   assert(outputSize < MAX_TENSOR_SIZE);
 
+  // Convolution forward
   const int reqAlgCnt = 8;
   int cnt = 0;
-  cudnnConvolutionFwdAlgoPerf_t perfResults[reqAlgCnt];
-  checkCUDNN(cudnnFindConvolutionForwardAlgorithmEx(
-      dnn, inputTensor, inputPtr, filterDesc, filterPtr, convDesc,
-      outputTensor, outputPtr, reqAlgCnt, &cnt, perfResults,
-      workSpace, workSpaceSize));
-  assert(cnt > 0);
-  checkCUDNN(perfResults[0].status);
-  //for (int i = 0; i < cnt; i++) {
-    //printf("fwdAlgo(%d) time(%.2lfms) space(%dMB)\n", perfResults[i].algo,
-    //       perfResults[i].time, perfResults[i].memory / 1024 / 1024);
-  //}
-  conv->fwdAlgo = perfResults[0].algo;
+  {
+    cudnnConvolutionFwdAlgoPerf_t perfResults[reqAlgCnt];
+    checkCUDNN(cudnnFindConvolutionForwardAlgorithmEx(
+        dnn, inputTensor, inputPtr, filterDesc, filterPtr, convDesc,
+        outputTensor, outputPtr, reqAlgCnt, &cnt, perfResults,
+        workSpace, workSpaceSize));
+    assert(cnt > 0);
+    checkCUDNN(perfResults[0].status);
+    //for (int i = 0; i < cnt; i++) {
+      //printf("fwdAlgo(%d) time(%.2lfms) space(%dMB)\n", perfResults[i].algo,
+      //       perfResults[i].time, perfResults[i].memory / 1024 / 1024);
+    //}
+    conv->fwdAlgo = perfResults[0].algo;
+  }
+  // Convolution backward filter
+  {
+    cudnnConvolutionBwdFilterAlgoPerf_t perfResults[reqAlgCnt];
+    checkCUDNN(cudnnFindConvolutionBackwardFilterAlgorithmEx(
+        dnn, inputTensor, inputPtr, outputTensor, outputPtr,
+        convDesc, filterDesc, filterPtr, reqAlgCnt, &cnt, perfResults,
+        workSpace, workSpaceSize));
+    assert(cnt > 0);
+    checkCUDNN(perfResults[0].status);
+    conv->bwdFilterAlgo = perfResults[0].algo;
+  }
+  // Convolution backward data
+  {
+    cudnnConvolutionBwdDataAlgoPerf_t perfResults[reqAlgCnt];
+    checkCUDNN(cudnnFindConvolutionBackwardDataAlgorithmEx(
+        dnn, filterDesc, filterPtr, outputTensor, outputPtr, convDesc,
+        inputTensor, inputPtr, reqAlgCnt, &cnt, perfResults,
+        workSpace, workSpaceSize));
+    assert(cnt > 0);
+    checkCUDNN(perfResults[0].status);
+    conv->bwdDataAlgo = perfResults[0].algo;
+  }
  
   checkCUDA(cudaDeviceSynchronize());
   for (int i = 0; i < WARMUP_TIMES + REPEAT_TIMES; i++) {
@@ -210,6 +235,15 @@ void Model::measure_conv2d_cost(Conv2D* conv)
       checkCUDNN(cudnnAddTensor(dnn, &alpha, biasTensor, biasPtr,
           &alpha, outputTensor, outputPtr));
     }
+    // Backward computation
+    checkCUDNN(cudnnConvolutionBackwardBias(
+        dnn, &alpha, outputTensor, outputPtr, &beta, biasTensor, biasPtr));
+    checkCUDNN(cudnnConvolutionBackwardFilter(
+        dnn, &alpha, inputTensor, inputPtr, outputTensor, outputPtr, convDesc,
+        conv->bwdFilterAlgo, workSpace, workSpaceSize, &beta, filterDesc, filterPtr));
+    checkCUDNN(cudnnConvolutionBackwardData(
+        dnn, &alpha, filterDesc, filterPtr, outputTensor, outputPtr, convDesc,
+        conv->bwdDataAlgo, workSpace, workSpaceSize, &beta, inputTensor, inputPtr));
   }
   checkCUDA(cudaEventRecord(endEvent));
   checkCUDA(cudaEventSynchronize(endEvent));
