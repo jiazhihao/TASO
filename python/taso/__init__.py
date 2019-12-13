@@ -579,6 +579,12 @@ def _sub(op, graph, tensors, initializer):
     outputs = graph.sub(x=inputs[0], y=inputs[1])
     return outputs
 
+def _sum(op, graph, tensors, initializer):
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 2, "TASO assumes Sum takes exactly two inputs. Submit a github issue when you see this."
+    outputs = graph.add(inputs[0], inputs[1])
+    return outputs
+
 def _transpose(op, graph, tensors, initializer):
     inputs = _get_inputs(op, graph, tensors, initializer)
     assert len(inputs) == 1, "Transpose requires exactly one input"
@@ -656,6 +662,7 @@ xf_operators['Sqrt'] = _sqrt
 xf_operators['Squeeze'] = _squeeze
 xf_operators['StridedSlice'] = _strided_slice
 xf_operators['Sub'] = _sub
+xf_operators['Sum'] = _sum
 xf_operators['Transpose'] = _transpose
 xf_operators['Unsqueeze'] = _unsqueeze
 
