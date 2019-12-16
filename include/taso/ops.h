@@ -28,8 +28,9 @@
 using namespace nvinfer1;
 #endif
 
-#ifdef USE_MKL
-#include "mkl_dnn.h"
+#ifdef USE_DNNL
+#include "dnnl.hpp"
+using DNNLNet = std::vector<std::pair<dnnl::primitive, std::unordered_map<int, dnnl::memory>>>;
 #endif
 
 #include <cassert>
@@ -468,6 +469,9 @@ public:
   Model *model;
   OpType type;
   float runtime;
+#ifdef USE_DNNL
+  DNNLNet net;
+#endif
 };
 
 class Graph {
@@ -684,11 +688,6 @@ public:
   cudnnConvolutionDescriptor_t convDesc;
   cudnnConvolutionFwdAlgo_t fwdAlgo;
 #endif
-#ifdef USE_MKL
-  std::vector<dnnPrimitive_t> compList;
-  std::vector<std::array<void*, dnnResourceNumber>> rsrcList;
-  int fwdAlgo; // Placeholder, should never use this in mkl.
-#endif
   int strideH, strideW;
   PaddingMode padding;
   ActiMode activation;
@@ -745,10 +744,6 @@ public:
   cudnnActivationDescriptor_t actiDesc;
   cudnnPoolingDescriptor_t poolDesc;
 #endif
-#ifdef USE_MKL
-  std::vector<dnnPrimitive_t> compList;
-  std::vector<std::array<void*, dnnResourceNumber>> rsrcList;
-#endif
   int kernelH, kernelW, strideH, strideW;
   PaddingMode padding;
   ActiMode activation;
@@ -784,10 +779,6 @@ public:
 public:
 #ifdef USE_CUDNN
   cudnnTensorDescriptor_t inputTensor, biasTensor, outputTensor;
-#endif
-#ifdef USE_MKL
-  dnnPrimitive_t comp;
-  std::array<void*, dnnResourceNumber> rsrc;
 #endif
   //DATATYPE *biasPtr, *scalePtr, *runningMean, *runningVar, *saveMean, *saveVar;
 };
@@ -1338,6 +1329,11 @@ public:
   cudnnTensorDescriptor_t scaleTensor;
   // variables for element wise
   cudnnOpTensorDescriptor_t opDesc;
+#endif
+#ifdef USE_DNNL
+  DNNLNet net;
+  dnnl::engine eng;
+  dnnl::stream strm;
 #endif
   std::map<ActivationKey, Activation*, KeyCompare<ActivationKey> > activation;
   std::map<BatchNormKey, BatchNorm*, KeyCompare<BatchNormKey> > batchnorm;
