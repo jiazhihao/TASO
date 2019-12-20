@@ -324,8 +324,8 @@ def _pad(op, graph, tensors, initializer):
     inputs = _get_inputs(op, graph, tensors, initializer)
     attrs = _parse_attribute(op.attribute)
     # Currently treat pad as a no op
-    assert sum(attrs['pads']) == 0
-    return inputs
+    #assert sum(attrs['pads']) == 0
+    return inputs[0]
 
 def _max(op, graph, tensors, initializer):
     inputs = _get_inputs(op, graph, tensors, initializer)
