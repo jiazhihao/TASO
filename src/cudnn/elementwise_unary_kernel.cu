@@ -17,6 +17,11 @@
 #include "taso/cuda_helper.h"
 using namespace taso;
 
+bool ElementWiseUnary::use_kernel(void) const
+{
+  return false;
+}
+
 void ElementWiseUnary::map(void)
 {
   checkCUDA(cudaMalloc(&outputs[0].data_ptr, outputs[0].volume() * sizeof(DATATYPE)));

@@ -850,6 +850,7 @@ class ElementWiseUnary : public OpBase {
 public:
   ElementWiseUnary(Model* _model, const Tensor& _input, OpType _type);
   ~ElementWiseUnary(void);
+  bool use_kernel(void) const;
   bool get_int_parameter(PMParameter para, int*);
   void forward(bool block);
   void map(void);
