@@ -703,6 +703,7 @@ public:
   void map(void);
   void unmap(void);
   bool get_int_parameter(PMParameter para, int*);
+  void set_layout(void);
   void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
 public:
   int outputC;

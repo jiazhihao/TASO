@@ -85,14 +85,7 @@ Matmul::Matmul(Model* _model, Tensor _input, Tensor _weight, ActiMode _activatio
   for (int i = 0; i < numDim-1; i++)
     outputs[0].dim[i] = _input.dim[i];
   outputs[0].dim[numDim-1] = _weight.dim[numDim-1];
-  outputs[0].stride[numDim-2] = 1;
-  outputs[0].stride[numDim-1] = outputs[0].dim[numDim-2];
-  int size = outputs[0].dim[numDim-2] * outputs[0].dim[numDim-1];
-  for (int i = numDim-3; i >= 0; i--) {
-    outputs[0].stride[i] = size;
-    size *= outputs[0].dim[i];
-  }
-  assert(size == outputs[0].volume());
+  set_layout();
   // set SplitInfo
   for (int i = 0; i < numDim-2; i++) {
     if (_input.split[i] == _weight.split[i])
