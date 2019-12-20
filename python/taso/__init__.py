@@ -323,6 +323,8 @@ def _mul(op, graph, tensors, initializer):
 def _pad(op, graph, tensors, initializer):
     inputs = _get_inputs(op, graph, tensors, initializer)
     attrs = _parse_attribute(op.attribute)
+    # TODO: use the shape information from the ONNX runtime to
+    # calculate the exact output shape
     # Currently treat pad as a no op
     #assert sum(attrs['pads']) == 0
     return inputs[0]
