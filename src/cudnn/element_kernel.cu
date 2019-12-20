@@ -80,7 +80,7 @@ void elementwise_kernel(int volume,
   }
 }
 
-bool Element::use_cudnn_kernel(void) const
+bool Element::use_kernel(void) const
 {
   switch (type) {
     case OP_EW_ADD:
@@ -111,7 +111,7 @@ bool Element::use_cudnn_kernel(void) const
 
 void Element::map(void)
 {
-  if (use_cudnn_kernel()) {
+  if (use_kernel()) {
     // create descriptors
     checkCUDNN(cudnnCreateTensorDescriptor(&in1Tensor));
     checkCUDNN(cudnnCreateTensorDescriptor(&in2Tensor));
@@ -154,7 +154,7 @@ void Element::map(void)
 
 void Element::unmap(void)
 {
-  if (use_cudnn_kernel()) {
+  if (use_kernel()) {
     checkCUDNN(cudnnDestroyTensorDescriptor(in1Tensor));
     checkCUDNN(cudnnDestroyTensorDescriptor(in2Tensor));
     checkCUDNN(cudnnDestroyTensorDescriptor(outTensor));
@@ -165,7 +165,7 @@ void Element::unmap(void)
 
 void Element::forward(bool block)
 {
-  if (use_cudnn_kernel()) {
+  if (use_kernel()) {
     const float alpha = 1.0f;
     const float beta = 0.0f;
     checkCUDNN(cudnnOpTensor(model->dnn, opDesc, &alpha, in1Tensor, inputs[0].data_ptr,
@@ -183,7 +183,7 @@ void Element::forward(bool block)
 void Model::measure_element_cost(Element* ele)
 {
   // cudnnOpTensor only supports OP_EW_ADD, OP_EW_MUL, OP_EW_MAX, OP_EW_MIN
-  if (ele->use_cudnn_kernel()) {
+  if (ele->use_kernel()) {
     const float alpha = 1.0f;
     const float beta = 0.0f;
     helperSetBroadcastableTensorDescriptor(ele->inputs[0],

@@ -833,7 +833,7 @@ class Element : public OpBase {
 public:
   Element(Model* _model, OpType _type, const Tensor& _t1, const Tensor& _t2);
   ~Element(void);
-  bool use_cudnn_kernel(void) const;
+  bool use_kernel(void) const;
   bool get_int_parameter(PMParameter para, int*);
   void forward(bool block);
   void map(void);
