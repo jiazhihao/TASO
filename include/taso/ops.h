@@ -30,6 +30,10 @@ using namespace nvinfer1;
 
 #ifdef USE_DNNL
 #include "dnnl.hpp"
+
+// FIXME: check DNNL_VERSION_MAJOR/MINOR
+#define DNNL_NO_MATMUL
+
 using DNNLNet = std::vector<std::pair<dnnl::primitive, std::unordered_map<int, dnnl::memory>>>;
 #endif
 
@@ -711,6 +715,22 @@ public:
 #ifdef USE_CUDNN
   cudnnTensorDescriptor_t outputTensor;
   cudnnActivationDescriptor_t actiDesc;
+#endif
+#ifdef USE_DNNL
+#ifdef DNNL_NO_MATMUL
+  struct BLASGEMMParams {
+    int batch;
+    int m;
+    int n;
+    int k;
+    char transA;
+    char transB;
+    int lda;
+    int ldb;
+    int ldc;
+  };
+  BLASGEMMParams params;
+#endif
 #endif
 };
 
