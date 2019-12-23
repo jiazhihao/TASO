@@ -801,6 +801,9 @@ public:
 #ifdef USE_CUDNN
   cudnnTensorDescriptor_t inputTensor, biasTensor, outputTensor;
 #endif
+#ifdef USE_DNNL
+  void* scaleShiftPtr;
+#endif
   //DATATYPE *biasPtr, *scalePtr, *runningMean, *runningVar, *saveMean, *saveVar;
 };
 

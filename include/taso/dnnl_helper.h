@@ -18,6 +18,7 @@
 
 #include <sstream>
 #include <iostream>
+#include <algorithm>
 #include <chrono>
 #include <cstring>
 #include "taso/ops.h"
