@@ -71,21 +71,19 @@ void helperSetBroadcastableTensorDescriptor(const Tensor& input,
   int dims[16], strides[16];
   assert(output.numDim <= 16);
   assert(input.numDim <= output.numDim);
+  assert(input.default_layout());
+  assert(output.default_layout());
   for (int i = 0; i < output.numDim; i++) {
-    dims[output.numDim-1-i] = output.dim[output.numDim-1-i];
-    if (i < input.numDim && input.dim[input.numDim-1-i] > 0) {
+    if (i < input.numDim) {
       strides[output.numDim-1-i] = input.stride[input.numDim-1-i];
+      dims[output.numDim-1-i] = input.dim[input.numDim-1-i];
     } else {
-      if (dims[output.numDim-1-i] > 1) {
-        fprintf(stderr, "cuDNN does not suppoort zero stride for broadcast\n"
-                "Consider switch to other library for broadcastable operators.\n");
-        assert(false);
-      }
-      strides[output.numDim-1-i] = 1;
+      strides[output.numDim-1-i] = input.stride[0];
+      dims[output.numDim-1-i] = 1;
     }
   }
   int num_dim = output.numDim;
-  if (output.numDim < 4) {
+  if (num_dim < 4) {
     num_dim = 4;
     for (int i = output.numDim; i < num_dim; i++) {
       dims[i] = 1;

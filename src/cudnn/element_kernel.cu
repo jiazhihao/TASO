@@ -18,80 +18,100 @@
 using namespace taso;
 
 __global__
-void elementwise_kernel(int volume, OpType type,
+void elementwise_kernel(int volume,
+                        OpType type,
+                        const Tensor& xTensor,
+                        const Tensor& yTensor,
+                        const Tensor& zTensor,
                         const DATATYPE* x,
 			const DATATYPE* y,
 			DATATYPE* z)
 {
-  switch (type) {
-    case OP_EW_SUB:
-    {
-      CUDA_KERNEL_LOOP(i, volume)
-      {
-        z[i] = x[i] - y[i];
-      }
-      break;
+  int pos[6];
+  assert(zTensor.numDim <= 6);
+  CUDA_KERNEL_LOOP(id_z, volume)
+  {
+    int id_x = 0, id_y = 0;
+    for (int j = 0; j < zTensor.numDim; j++) {
+      pos[j] = (id_z / zTensor.stride[j]) % zTensor.dim[j];
     }
-    case OP_EW_DIV:
-    {
-      CUDA_KERNEL_LOOP(i, volume)
-      {
-        z[i] = x[i] / y[i];
-      }
-      break;
+    int diff = zTensor.numDim - xTensor.numDim;
+    for (int j = 0; j < xTensor.numDim; j++) {
+      id_x += xTensor.stride[j] * pos[j + diff];
     }
-    case OP_EW_EQUAL:
-    {
-      CUDA_KERNEL_LOOP(i, volume)
-      {
-        z[i] = (x[i] == y[i]);
-      }
-      break;
+    diff = zTensor.numDim - yTensor.numDim;
+    for (int j = 0; j < yTensor.numDim; j++) {
+      id_y += yTensor.stride[j] * pos[j + diff];
     }
-    case OP_EW_GREATER:
-    {
-      CUDA_KERNEL_LOOP(i, volume)
+    switch (type) {
+      case OP_EW_SUB:
       {
-        z[i] = (x[i] > y[i]);
+        z[id_z] = x[id_x] - y[id_y];
+        break;
       }
-      break;
-    }
-    case OP_EW_LESS:
-    {
-      CUDA_KERNEL_LOOP(i, volume)
+      case OP_EW_DIV:
       {
-        z[i] = (x[i] < y[i]);
+        z[id_z] = x[id_x] / y[id_y];
+        break;
       }
-      break;
-    }
-    case OP_PRELU:
-    {
-      CUDA_KERNEL_LOOP(i, volume)
+      case OP_EW_EQUAL:
       {
-        z[i] = x[i] >= 0 ? x[i] : y[i] * x[i];
+        z[id_z] = (x[id_x] == y[id_y]);
+        break;
       }
+      case OP_EW_GREATER:
+      {
+        z[id_z] = (x[id_x] > y[id_y]);
+        break;
+      }
+      case OP_EW_LESS:
+      {
+        z[id_z] = (x[id_x] < y[id_y]);
+        break;
+      }
+      case OP_PRELU:
+      {
+        z[id_z] = x[id_x] >= 0 ? x[id_x] : y[id_y] * x[id_x];
+        break;
+      }
+      default:
+        assert(false);
     }
-    default:
-      assert(false);
   }
 }
 
-bool Element::has_cudnn_kernel(void) const
+bool Element::use_cudnn_kernel(void) const
 {
   switch (type) {
     case OP_EW_ADD:
     case OP_EW_MUL:
     case OP_EW_MAX:
     case OP_EW_MIN:
-      return true;
+      break;
     default:
       return false;
   }
+  // use cudnn kernel only if inputs and output have default layouts
+  if (inputs[0].default_layout() && inputs[1].default_layout()
+  && outputs[0].default_layout()) {
+    // Do nothing
+  } else {
+    return false;
+  }
+  // CUDNNv7.6.5 raequirement: Each dimension of the input tensor A must 
+  // match the corresponding dimension of the destination tensor C, and 
+  // each dimension of the input tensor B must match the corresponding 
+  // dimension of the destination tensor C or must be equal to 1. 
+  // In the latter case, the same value from the input tensor B for 
+  // those dimensions will be used to blend into the C tensor.
+  if (inputs[0].volume() != outputs[0].volume())
+    return false;
+  return true;
 }
 
 void Element::map(void)
 {
-  if (has_cudnn_kernel()) {
+  if (use_cudnn_kernel()) {
     // create descriptors
     checkCUDNN(cudnnCreateTensorDescriptor(&in1Tensor));
     checkCUDNN(cudnnCreateTensorDescriptor(&in2Tensor));
@@ -134,7 +154,7 @@ void Element::map(void)
 
 void Element::unmap(void)
 {
-  if (has_cudnn_kernel()) {
+  if (use_cudnn_kernel()) {
     checkCUDNN(cudnnDestroyTensorDescriptor(in1Tensor));
     checkCUDNN(cudnnDestroyTensorDescriptor(in2Tensor));
     checkCUDNN(cudnnDestroyTensorDescriptor(outTensor));
@@ -145,14 +165,15 @@ void Element::unmap(void)
 
 void Element::forward(bool block)
 {
-  if (has_cudnn_kernel()) {
+  if (use_cudnn_kernel()) {
     const float alpha = 1.0f;
     const float beta = 0.0f;
     checkCUDNN(cudnnOpTensor(model->dnn, opDesc, &alpha, in1Tensor, inputs[0].data_ptr,
         &alpha, in2Tensor, inputs[1].data_ptr, &beta, outTensor, outputs[0].data_ptr));
   } else {
-    elementwise_kernel<<<GET_BLOCKS(inputs[0].volume()), CUDA_NUM_THREADS>>>(
-        inputs[0].volume(), type, (DATATYPE*)inputs[0].data_ptr, (DATATYPE*)inputs[1].data_ptr,
+    elementwise_kernel<<<GET_BLOCKS(outputs[0].volume()), CUDA_NUM_THREADS>>>(
+        outputs[0].volume(), type, inputs[0], inputs[1], outputs[0],
+        (DATATYPE*)inputs[0].data_ptr, (DATATYPE*)inputs[1].data_ptr,
 	(DATATYPE*)outputs[0].data_ptr);
   }
   if (block)
@@ -162,7 +183,7 @@ void Element::forward(bool block)
 void Model::measure_element_cost(Element* ele)
 {
   // cudnnOpTensor only supports OP_EW_ADD, OP_EW_MUL, OP_EW_MAX, OP_EW_MIN
-  if (ele->has_cudnn_kernel()) {
+  if (ele->use_cudnn_kernel()) {
     const float alpha = 1.0f;
     const float beta = 0.0f;
     helperSetBroadcastableTensorDescriptor(ele->inputs[0],
@@ -213,8 +234,9 @@ void Model::measure_element_cost(Element* ele)
     checkCUDA(cudaDeviceSynchronize());
     checkCUDA(cudaEventRecord(startEvent));
     for (int i = 0; i < REPEAT_TIMES; i++) {
-      elementwise_kernel<<<GET_BLOCKS(ele->inputs[0].volume()), CUDA_NUM_THREADS>>>(
-          ele->inputs[0].volume(), ele->type, inputPtr, filterPtr, outputPtr);
+      elementwise_kernel<<<GET_BLOCKS(ele->outputs[0].volume()), CUDA_NUM_THREADS>>>(
+          ele->outputs[0].volume(), ele->type, ele->inputs[0], ele->inputs[1],
+          ele->outputs[0], inputPtr, filterPtr, outputPtr);
     }
     checkCUDA(cudaEventRecord(endEvent));
     checkCUDA(cudaEventSynchronize(endEvent));
