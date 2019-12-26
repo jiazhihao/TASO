@@ -48,6 +48,9 @@ inline uint64_t microsecond_timer() {
 static constexpr dnnl::memory::data_type DNNL_DEF_DTYPE = dnnl::memory::data_type::f32;
 static constexpr dnnl::memory::format_tag DNNL_FMT_ANY = dnnl::memory::format_tag::any;
 
+void assign_kernel(taso::DATATYPE* ptr, int size, taso::DATATYPE value);
+void copy_kernel(taso::DATATYPE* dst, const taso::DATATYPE* src, int size);
+
 dnnl::primitive_attr get_activation_attr(taso::ActiMode activation);
 
 // if numDim is given to support broadcast, it must be no less than the tensor dimension.

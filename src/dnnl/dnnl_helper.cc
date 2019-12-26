@@ -16,6 +16,16 @@
 #include "taso/dnnl_helper.h"
 using namespace taso;
 
+void assign_kernel(DATATYPE* ptr, int size, DATATYPE value) {
+#pragma omp parallel for
+  for (int i = 0; i < size; i++) ptr[i] = value;
+}
+
+void copy_kernel(DATATYPE* dst, const DATATYPE* src, int size) {
+#pragma omp parallel for
+  for (int i = 0; i < size; i++) dst[i] = src[i];
+}
+
 dnnl::primitive_attr get_activation_attr(ActiMode activation) {
   dnnl::algorithm ops_algo = dnnl::algorithm::eltwise_relu;  // relu as default
   const float ops_scale = 1.0f;
