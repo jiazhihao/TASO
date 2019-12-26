@@ -64,6 +64,13 @@ void elementwise_kernel(int volume, OpType type,
       }
       break;
     }
+    case OP_PRELU:
+    {
+      CUDA_KERNEL_LOOP(i, volume)
+      {
+        z[i] = x[i] >= 0 ? x[i] : y[i] * x[i];
+      }
+    }
     default:
       assert(false);
   }

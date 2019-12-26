@@ -91,6 +91,7 @@ cdef extern from "taso/ops.h" namespace "taso":
         OP_LEAKYRELU,
         OP_SLICE,
         OP_RESIZE,
+        OP_PRELU,
 
     # This must be consistent with include/taso/ops.h
     cdef enum PMParameter:

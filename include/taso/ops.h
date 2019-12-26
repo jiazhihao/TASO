@@ -125,6 +125,7 @@ enum OpType {
   OP_LEAKYRELU,
   OP_SLICE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Slice
   OP_RESIZE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Resize
+  OP_PRELU, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#PRelu
 };
 
 struct Op {

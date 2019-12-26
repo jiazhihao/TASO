@@ -329,6 +329,13 @@ def _pad(op, graph, tensors, initializer):
     #assert sum(attrs['pads']) == 0
     return inputs[0]
 
+def _prelu(op, graph, tensors, initializer):
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 2, "PRelu requires exactly two inputs"
+    attrs = _parse_attribute(op.attribute)
+    outputs = graph.prelu(x=inputs[0], slope=inputs[1])
+    return outputs
+
 def _max(op, graph, tensors, initializer):
     inputs = _get_inputs(op, graph, tensors, initializer)
     assert len(inputs) == 2, "Max takes exactly two inputs"
@@ -641,6 +648,7 @@ xf_operators['LeakyRelu'] = _leakyrelu
 xf_operators['Less'] = _less
 xf_operators['Log'] = _log
 xf_operators['Pad'] = _pad
+xf_operators['PRelu'] = _prelu
 xf_operators['ReduceMax'] = _reducemax
 xf_operators['ReduceMean'] = _reducemean
 xf_operators['ReduceMin'] = _reducemin
