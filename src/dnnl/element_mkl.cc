@@ -64,6 +64,9 @@ void elementwise_kernel(int volume, OpType type,
       case OP_EW_MIN:
         z[zid] = (x[xid] < y[yid] ? x[xid] : y[yid]);
         break;
+      case OP_PRELU:
+        z[zid] = (x[xid] >= 0 ? x[xid] : y[yid] * x[xid]);
+        break;
       default:
         assert(false);
     }
