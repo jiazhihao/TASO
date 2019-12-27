@@ -19,52 +19,54 @@ using namespace taso;
 using namespace dnnl;
 
 void elementwise_kernel(int volume, OpType type,
+    const Tensor& tx, const Tensor& ty, const Tensor& tz,
     const DATATYPE* x, const DATATYPE* y, DATATYPE* z) {
-  switch (type) {
-    case OP_EW_SUB:
-      {
+  int numDim = tz.numDim;
+  assert(tx.numDim <= numDim);
+  assert(ty.numDim <= numDim);
+  assert(numDim <= 6);
+  int pos[6];
 #pragma omp parallel for
-        for (int i = 0; i < volume; i++) z[i] = x[i] - y[i];
+  for (int zid = 0; zid < volume; zid++) {
+    for (int d = 0; d < numDim; d++) {
+      pos[d] = (zid / tz.stride[d]) % tz.dim[d];
+    }
+    int xid = 0;
+    int diff = numDim - tx.numDim;
+    for (int d = 0; d < tx.numDim; d++) {
+      xid += tx.stride[d] * pos[d + diff];
+    }
+    int yid = 0;
+    diff = numDim - ty.numDim;
+    for (int d = 0; d < ty.numDim; d++) {
+      yid += ty.stride[d] * pos[d + diff];
+    }
+
+    switch (type) {
+      case OP_EW_SUB:
+        z[zid] = x[xid] - y[yid];
         break;
-      }
-    case OP_EW_DIV:
-      {
-#pragma omp parallel for
-        for (int i = 0; i < volume; i++) z[i] = x[i] / y[i];
+      case OP_EW_DIV:
+        z[zid] = x[xid] / y[yid];
         break;
-      }
-    case OP_EW_EQUAL:
-      {
-#pragma omp parallel for
-        for (int i = 0; i < volume; i++) z[i] = (x[i] == y[i]);
+      case OP_EW_EQUAL:
+        z[zid] = (x[xid] == y[yid]);
         break;
-      }
-    case OP_EW_GREATER:
-      {
-#pragma omp parallel for
-        for (int i = 0; i < volume; i++) z[i] = (x[i] > y[i]);
+      case OP_EW_GREATER:
+        z[zid] = (x[xid] > y[yid]);
         break;
-      }
-    case OP_EW_LESS:
-      {
-#pragma omp parallel for
-        for (int i = 0; i < volume; i++) z[i] = (x[i] < y[i]);
+      case OP_EW_LESS:
+        z[zid] = (x[xid] < y[yid]);
         break;
-      }
-    case OP_EW_MAX:
-      {
-#pragma omp parallel for
-        for (int i = 0; i < volume; i++) z[i] = (x[i] > y[i] ? x[i] : y[i]);
+      case OP_EW_MAX:
+        z[zid] = (x[xid] > y[yid] ? x[xid] : y[yid]);
         break;
-      }
-    case OP_EW_MIN:
-      {
-#pragma omp parallel for
-        for (int i = 0; i < volume; i++) z[i] = (x[i] < y[i] ? x[i] : y[i]);
+      case OP_EW_MIN:
+        z[zid] = (x[xid] < y[yid] ? x[xid] : y[yid]);
         break;
-      }
-    default:
-      assert(false);
+      default:
+        assert(false);
+    }
   }
 }
 
@@ -86,11 +88,12 @@ static void create_net(Element* ele, DNNLNet& net, engine& eng, stream& strm,
   // dimensions.
   assert(ele->inputs[0].volume() == ele->outputs[0].volume());
   assert(ele->inputs[1].volume() == ele->outputs[0].volume());
+  int numDim = ele->outputs[0].numDim;
   if (ele->use_kernel()) {
     // data descriptors.
-    auto in0MemDesc = get_memory_desc(ele->inputs[0]);
-    auto in1MemDesc = get_memory_desc(ele->inputs[1]);
-    auto outputMemDesc = get_memory_desc(ele->outputs[0]);
+    auto in0MemDesc = get_memory_desc(ele->inputs[0], numDim);
+    auto in1MemDesc = get_memory_desc(ele->inputs[1], numDim);
+    auto outputMemDesc = get_memory_desc(ele->outputs[0], numDim);
     // data memories.
     in0Mem = memory(in0MemDesc, eng, in0Ptr);
     in1Mem = memory(in1MemDesc, eng, in1Ptr);
@@ -140,6 +143,7 @@ void Element::forward(bool block)
     if (block) model->strm.wait();
   } else {
     elementwise_kernel(outputs[0].volume(), type,
+        inputs[0], inputs[1], outputs[0],
         (DATATYPE*)inputs[0].data_ptr,
         (DATATYPE*)inputs[1].data_ptr,
         (DATATYPE*)outputs[0].data_ptr);
@@ -175,6 +179,7 @@ void Model::measure_element_cost(Element* ele)
         beg = microsecond_timer();
       }
       elementwise_kernel(ele->outputs[0].volume(), ele->type,
+          ele->inputs[0], ele->inputs[1], ele->outputs[0],
           (DATATYPE*)inputPtr,
           (DATATYPE*)biasPtr,
           (DATATYPE*)outputPtr);

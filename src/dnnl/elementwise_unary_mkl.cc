@@ -19,34 +19,40 @@
 using namespace taso;
 using namespace dnnl;
 
-void unary_kernel(int volume, OpType type, const DATATYPE* x, DATATYPE* y) {
-  switch (type) {
-    case OP_CEIL:
-      {
+void unary_kernel(int volume, OpType type,
+    const Tensor& tx, const Tensor& ty,
+    const DATATYPE* x, DATATYPE* y) {
+  int numDim = ty.numDim;
+  assert(tx.numDim <= numDim);
+  assert(numDim <= 6);
+  int pos[6];
 #pragma omp parallel for
-        for (int i = 0; i < volume; i++) y[i] = std::ceil(x[i]);
+  for (int yid = 0; yid < volume; yid++) {
+    for (int d = 0; d < numDim; d++) {
+      pos[d] = (yid / ty.stride[d]) % ty.dim[d];
+    }
+    int xid = 0;
+    int diff = numDim - tx.numDim;
+    for (int d = 0; d < tx.numDim; d++) {
+      xid += tx.stride[d] * pos[d + diff];
+    }
+
+    switch (type) {
+      case OP_CEIL:
+        y[yid] = std::ceil(x[xid]);
         break;
-      }
-    case OP_ROUND:
-      {
-#pragma omp parallel for
-        for (int i = 0; i < volume; i++) y[i] = std::round(x[i]);
+      case OP_ROUND:
+        y[yid] = std::round(x[xid]);
         break;
-      }
-    case OP_LOGICAL_NOT:
-      {
-#pragma omp parallel for
-        for (int i = 0; i < volume; i++) y[i] = !x[i];
+      case OP_LOGICAL_NOT:
+        y[yid] = !x[xid];
         break;
-      }
-    case OP_LOG:
-      {
-#pragma omp parallel for
-        for (int i = 0; i < volume; i++) y[i] = std::log(x[i]);
+      case OP_LOG:
+        y[yid] = std::log(x[xid]);
         break;
-      }
-    default:
-      assert(false);
+      default:
+        assert(false);
+    }
   }
 }
 
@@ -55,10 +61,15 @@ bool ElementWiseUnary::use_kernel(void) const
   switch (type) {
     case OP_EXP:
     case OP_SQRT:
-      return true;
+      break;
     default:
       return false;
   }
+
+  // dnnl::eltwise requires the same layout between input and output.
+  if (!outputs[0].has_same_shape_stride_split(inputs[0])) return false;
+
+  return true;
 }
 
 static void create_net(ElementWiseUnary* unary, DNNLNet& net, engine& eng, stream& strm,
@@ -129,6 +140,7 @@ void ElementWiseUnary::forward(bool block)
     if (block) model->strm.wait();
   } else {
     unary_kernel(outputs[0].volume(), type,
+        inputs[0], outputs[0],
         (DATATYPE*)inputs[0].data_ptr,
         (DATATYPE*)outputs[0].data_ptr);
   }
@@ -161,7 +173,9 @@ void Model::measure_elementwise_unary_cost(ElementWiseUnary* unary)
       if (i == WARMUP_TIMES) {
         beg = microsecond_timer();
       }
-      unary_kernel(unary->outputs[0].volume(), unary->type, inputPtr, outputPtr);
+      unary_kernel(unary->outputs[0].volume(), unary->type,
+          unary->inputs[0], unary->outputs[0],
+          inputPtr, outputPtr);
     }
   }
   auto end = microsecond_timer();
