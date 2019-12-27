@@ -28,8 +28,13 @@
 using namespace nvinfer1;
 #endif
 
-#ifdef USE_MKL
-#include "mkl_dnn.h"
+#ifdef USE_DNNL
+#include "dnnl.hpp"
+
+// FIXME: check DNNL_VERSION_MAJOR/MINOR
+#define DNNL_NO_MATMUL
+
+using DNNLNet = std::vector<std::pair<dnnl::primitive, std::unordered_map<int, dnnl::memory>>>;
 #endif
 
 #include <cassert>
@@ -468,6 +473,9 @@ public:
   Model *model;
   OpType type;
   float runtime;
+#ifdef USE_DNNL
+  DNNLNet net;
+#endif
 };
 
 class Graph {
@@ -684,11 +692,6 @@ public:
   cudnnConvolutionDescriptor_t convDesc;
   cudnnConvolutionFwdAlgo_t fwdAlgo;
 #endif
-#ifdef USE_MKL
-  std::vector<dnnPrimitive_t> compList;
-  std::vector<std::array<void*, dnnResourceNumber>> rsrcList;
-  int fwdAlgo; // Placeholder, should never use this in mkl.
-#endif
   int strideH, strideW;
   PaddingMode padding;
   ActiMode activation;
@@ -704,6 +707,7 @@ public:
   void map(void);
   void unmap(void);
   bool get_int_parameter(PMParameter para, int*);
+  void set_layout(void);
   void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
 public:
   int outputC;
@@ -711,6 +715,22 @@ public:
 #ifdef USE_CUDNN
   cudnnTensorDescriptor_t outputTensor;
   cudnnActivationDescriptor_t actiDesc;
+#endif
+#ifdef USE_DNNL
+#ifdef DNNL_NO_MATMUL
+  struct BLASGEMMParams {
+    int batch;
+    int m;
+    int n;
+    int k;
+    char transA;
+    char transB;
+    int lda;
+    int ldb;
+    int ldc;
+  };
+  BLASGEMMParams params;
+#endif
 #endif
 };
 
@@ -744,10 +764,6 @@ public:
   cudnnTensorDescriptor_t inputTensor, outputTensor;
   cudnnActivationDescriptor_t actiDesc;
   cudnnPoolingDescriptor_t poolDesc;
-#endif
-#ifdef USE_MKL
-  std::vector<dnnPrimitive_t> compList;
-  std::vector<std::array<void*, dnnResourceNumber>> rsrcList;
 #endif
   int kernelH, kernelW, strideH, strideW;
   PaddingMode padding;
@@ -785,9 +801,8 @@ public:
 #ifdef USE_CUDNN
   cudnnTensorDescriptor_t inputTensor, biasTensor, outputTensor;
 #endif
-#ifdef USE_MKL
-  dnnPrimitive_t comp;
-  std::array<void*, dnnResourceNumber> rsrc;
+#ifdef USE_DNNL
+  void* scaleShiftPtr;
 #endif
   //DATATYPE *biasPtr, *scalePtr, *runningMean, *runningVar, *saveMean, *saveVar;
 };
@@ -821,7 +836,7 @@ class Element : public OpBase {
 public:
   Element(Model* _model, OpType _type, const Tensor& _t1, const Tensor& _t2);
   ~Element(void);
-  bool use_cudnn_kernel(void) const;
+  bool use_kernel(void) const;
   bool get_int_parameter(PMParameter para, int*);
   void forward(bool block);
   void map(void);
@@ -838,6 +853,7 @@ class ElementWiseUnary : public OpBase {
 public:
   ElementWiseUnary(Model* _model, const Tensor& _input, OpType _type);
   ~ElementWiseUnary(void);
+  bool use_kernel(void) const;
   bool get_int_parameter(PMParameter para, int*);
   void forward(bool block);
   void map(void);
@@ -1338,6 +1354,11 @@ public:
   cudnnTensorDescriptor_t scaleTensor;
   // variables for element wise
   cudnnOpTensorDescriptor_t opDesc;
+#endif
+#ifdef USE_DNNL
+  DNNLNet net;
+  dnnl::engine eng;
+  dnnl::stream strm;
 #endif
   std::map<ActivationKey, Activation*, KeyCompare<ActivationKey> > activation;
   std::map<BatchNormKey, BatchNorm*, KeyCompare<BatchNormKey> > batchnorm;

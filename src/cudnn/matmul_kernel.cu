@@ -108,6 +108,20 @@ void Matmul::forward(bool block)
     checkCUDA(cudaDeviceSynchronize());
 }
 
+void Matmul::set_layout(void)
+{
+  // CuBLAS uses column-major.
+  int numDim = outputs[0].numDim;
+  outputs[0].stride[numDim-2] = 1;
+  outputs[0].stride[numDim-1] = outputs[0].dim[numDim-2];
+  int size = outputs[0].dim[numDim-2] * outputs[0].dim[numDim-1];
+  for (int i = numDim-3; i >= 0; i--) {
+    outputs[0].stride[i] = size;
+    size *= outputs[0].dim[i];
+  }
+  assert(size == outputs[0].volume());
+}
+
 void Model::measure_matmul_cost(Matmul* mm)
 {
   const float alpha = 1.0f;

@@ -87,6 +87,9 @@ void BatchNorm::collect_costs(float& exe_time, float& flops,
   flops += outputSize * 2;
   mem_acc += inputSize;
   num_kernels += 1;
+  printf("        cost[BatchNorm]: i(%d %d %d %d) cost(%.4lf) total_cost(%.4lf)\n",
+          inputs[0].dim[0], inputs[0].dim[1], inputs[0].dim[2], inputs[0].dim[3],
+          runtime, exe_time);
 }
 
 // key is (_input)

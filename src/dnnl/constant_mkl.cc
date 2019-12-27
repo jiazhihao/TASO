@@ -14,34 +14,24 @@
  */
 
 #include "taso/ops.h"
-#include "taso/cuda_helper.h"
+#include "taso/dnnl_helper.h"
 using namespace taso;
 
-bool ElementWiseUnary::use_kernel(void) const
+void Constant::map(void)
 {
-  return false;
+  // allocate tensors
+  size_t outputSize = sizeof(DATATYPE) * outputs[0].volume();
+  CHECK_NE(nullptr, outputs[0].data_ptr = malloc(outputSize));
 }
 
-void ElementWiseUnary::map(void)
+void Constant::unmap(void)
 {
-  checkCUDA(cudaMalloc(&outputs[0].data_ptr, outputs[0].volume() * sizeof(DATATYPE)));
+  // free tensors
+  free(outputs[0].data_ptr);
+  outputs[0].data_ptr = nullptr;
 }
 
-void ElementWiseUnary::unmap(void)
+void Constant::forward(bool block)
 {
-  checkCUDA(cudaFree(outputs[0].data_ptr));
 }
 
-void ElementWiseUnary::forward(bool block)
-{
-  if (block)
-    checkCUDA(cudaDeviceSynchronize());
-}
-
-void Model::measure_elementwise_unary_cost(ElementWiseUnary* unary)
-{
-  unary->runtime = 0;
-  if (print_cost)
-    printf("  measure[ElementWiseUnary]: type(%d) cost(%.4lf)\n",
-           unary->type, unary->runtime);
-}

@@ -14,34 +14,34 @@
  */
 
 #include "taso/ops.h"
-#include "taso/cuda_helper.h"
+#include "taso/dnnl_helper.h"
 using namespace taso;
+using namespace dnnl;
 
-bool ElementWiseUnary::use_kernel(void) const
+void Reshape::map(void)
 {
-  return false;
+  // allocate tensors
+  assert(outputs[0].volume() == inputs[0].volume());
+  // for now the output and input share the same instance
+  outputs[0].data_ptr = inputs[0].data_ptr;
 }
 
-void ElementWiseUnary::map(void)
+void Reshape::unmap(void)
 {
-  checkCUDA(cudaMalloc(&outputs[0].data_ptr, outputs[0].volume() * sizeof(DATATYPE)));
+  // clear primitives
+  net.clear();
 }
 
-void ElementWiseUnary::unmap(void)
+void Reshape::forward(bool block)
 {
-  checkCUDA(cudaFree(outputs[0].data_ptr));
+  if (block) model->strm.wait();
 }
 
-void ElementWiseUnary::forward(bool block)
+void Model::measure_reshape_cost(Reshape* reshape)
 {
-  if (block)
-    checkCUDA(cudaDeviceSynchronize());
-}
-
-void Model::measure_elementwise_unary_cost(ElementWiseUnary* unary)
-{
-  unary->runtime = 0;
+  // Reshape requires no kernel launch
+  reshape->runtime = 0;
   if (print_cost)
-    printf("  measure[ElementWiseUnary]: type(%d) cost(%.4lf)\n",
-           unary->type, unary->runtime);
+    printf("  measure[Reshape]: cost(%.4lf)\n", reshape->runtime);
 }
+
