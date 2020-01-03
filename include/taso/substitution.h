@@ -155,9 +155,13 @@ public:
                      PaddingMode padding,
                      ActiMode activation,
                      bool isSrcOp = true);
-  OpX* create_batchnorm(TensorX input, TensorX scale, TensorX bias, TensorX mean, TensorX var);
+  OpX* create_batchnorm(TensorX input, TensorX scale, TensorX bias,
+                        TensorX mean, TensorX var, bool isSrcOp = true);
   OpX* create_element(TensorX input0, TensorX input1,
                       OpType type, bool isSrcOp = true);
+  OpX* create_fuse_conv_batchnorm(TensorX conv_w, TensorX scale,
+                                  TensorX bias, TensorX mean, TensorX var,
+                                  bool isSrcOp = true);
   OpX* create_pool2d_avg(TensorX input, TensorX weight,
                          //int kernelH, int kernelW,
                          int strideH, int strideW,

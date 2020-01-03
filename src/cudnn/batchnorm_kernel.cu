@@ -1,4 +1,4 @@
-/* Copyright 2018 Stanford
+/* Copyright 2020 Stanford
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,8 +67,8 @@ void BatchNorm::unmap(void)
   checkCUDA(cudaFree(saveVar));
   checkCUDA(cudaFree(biasPtr));
   checkCUDA(cudaFree(scalePtr));
-  checkCUDA(cudaFree(outputs[0].data_ptr));
 #endif
+  checkCUDA(cudaFree(outputs[0].data_ptr));
 }
 
 void BatchNorm::forward(bool block)

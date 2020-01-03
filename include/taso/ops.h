@@ -131,6 +131,7 @@ enum OpType {
   OP_SLICE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Slice
   OP_RESIZE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Resize
   OP_PRELU, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#PRelu
+  OP_FUSE_CONV_BATCHNORM,
 };
 
 struct Op {
@@ -528,6 +529,11 @@ public:
   TensorHandle fc(const TensorHandle _input,
                   int _outputC,
                   ActiMode _actiMode = AC_MODE_NONE);
+  TensorHandle fuse_conv_batchnorm(const TensorHandle _conv_w,
+                                   const TensorHandle _scale,
+                                   const TensorHandle _bias,
+                                   const TensorHandle _mean,
+                                   const TensorHandle _var);
   TensorHandle leakyrelu(const TensorHandle _input, float _alpha,
                          bool _inplace=true);
   TensorHandle log(const TensorHandle _input);
@@ -789,8 +795,8 @@ public:
 
 class BatchNorm : public OpBase {
 public:
-  BatchNorm(Model* _model, Tensor _input, Tensor _scale,
-            Tensor _bias, Tensor _mean, Tensor _var);
+  BatchNorm(Model* _model, const Tensor& _input, const Tensor& _scale,
+            const Tensor& _bias, const Tensor& _mean, const Tensor& _var);
   ~BatchNorm(void);
   bool get_int_parameter(PMParameter para, int*);
   void forward(bool block);
@@ -872,20 +878,16 @@ public:
   void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
 };
 
-class TopK : public OpBase {
+class FuseConvBatchNorm : public OpBase {
 public:
-  TopK(Model* _model, const Tensor& _input,
-       int _axis, int _numk,
-       bool _largest, bool _sorted);
-  ~TopK(void);
+  FuseConvBatchNorm(Model* _model, const Tensor& _conv_w, const Tensor& _scale,
+                    const Tensor& _bias, const Tensor& _mean, const Tensor& _var);
+  ~FuseConvBatchNorm(void);
   bool get_int_parameter(PMParameter para, int*);
   void forward(bool block);
   void map(void);
   void unmap(void);
   void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
-public:
-  int axis;
-  bool largest, sorted;
 };
 
 class MergeGConv : public OpBase {
@@ -1023,6 +1025,22 @@ public:
   std::vector<int> axes;
 };
 
+class TopK : public OpBase {
+public:
+  TopK(Model* _model, const Tensor& _input,
+       int _axis, int _numk,
+       bool _largest, bool _sorted);
+  ~TopK(void);
+  bool get_int_parameter(PMParameter para, int*);
+  void forward(bool block);
+  void map(void);
+  void unmap(void);
+  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
+public:
+  int axis;
+  bool largest, sorted;
+};
+
 class Transpose : public OpBase {
 public:
   Transpose(Model* _model, Tensor _input,
@@ -1082,7 +1100,7 @@ struct ActivationKey {
 // key is (inputN, inputC, inputH, inputW)
 struct BatchNormKey {
   static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH;
-  BatchNormKey(Tensor);
+  BatchNormKey(const Tensor& _input);
   int keys[KEY_LENGTH];
 };
 
@@ -1128,6 +1146,12 @@ struct ElementWiseUnaryKey {
 struct EnlargeKey {
   static const int KEY_LENGTH = 2 * Tensor::MAX_KEY_LENGTH;
   EnlargeKey(Tensor w1, Tensor w2);
+  int keys[KEY_LENGTH];
+};
+
+struct FuseConvBatchNormKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH;
+  FuseConvBatchNormKey(const Tensor& conv_w);
   int keys[KEY_LENGTH];
 };
 
@@ -1252,8 +1276,11 @@ public:
   Model();
   Op get_or_create_activation(Tensor _input, OpType _type,
                               bool _inPlace);
-  Op get_or_create_batchnorm(Tensor _input, Tensor _scale, Tensor _bias,
-                             Tensor _mean, Tensor _var);
+  Op get_or_create_batchnorm(const Tensor& _input,
+                             const Tensor& _scale,
+                             const Tensor& _bias,
+                             const Tensor& _mean,
+                             const Tensor& _var);
   Op get_or_create_cast(const Tensor& _input, DataType _datatype);
   Op get_or_create_concat(int axis, int n, Tensor* _inputs, bool* _needCopy);
   Op get_or_create_constant(int ndim, int* dims, OpType type);
@@ -1264,6 +1291,11 @@ public:
   Op get_or_create_element(OpType type, const Tensor& t1, const Tensor& t2);
   Op get_or_create_elementwise_unary(const Tensor& _input, OpType _type);
   Op get_or_create_enlarge(Tensor _w1, Tensor _w2);
+  Op get_or_create_fuse_conv_batchnorm(const Tensor& _conv_w,
+                                       const Tensor& _scale,
+                                       const Tensor& _bias,
+                                       const Tensor& _mean,
+                                       const Tensor& _var);
   Op get_or_create_matmul(Tensor _input, Tensor _weight,
                           ActiMode _actimode);
   Op get_or_create_mul(const Tensor& x,
@@ -1369,6 +1401,7 @@ public:
   std::map<ElementKey, Element*, KeyCompare<ElementKey> > element;
   std::map<ElementWiseUnaryKey, ElementWiseUnary*, KeyCompare<ElementWiseUnaryKey> > element_unary;
   std::map<EnlargeKey, Enlarge*, KeyCompare<EnlargeKey> > enlarge;
+  std::map<FuseConvBatchNormKey, FuseConvBatchNorm*, KeyCompare<FuseConvBatchNormKey> > fuse_conv_batchnorm;
   std::map<MatmulKey, Matmul*, KeyCompare<MatmulKey> > matmul;
   std::map<MergeGConvKey, MergeGConv*, KeyCompare<MergeGConvKey> > merge_gconv;
   std::map<MulKey, Mul*, KeyCompare<MulKey> > mul;

@@ -1,4 +1,4 @@
-/* Copyright 2018 Stanford
+/* Copyright 2020 Stanford
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,11 +34,11 @@ TensorHandle Graph::batchnorm(const TensorHandle _input,
   return t;
 }
 
-Op Model::get_or_create_batchnorm(Tensor _input,
-                                  Tensor _scale,
-                                  Tensor _bias,
-                                  Tensor _mean,
-                                  Tensor _var)
+Op Model::get_or_create_batchnorm(const Tensor& _input,
+                                  const Tensor& _scale,
+                                  const Tensor& _bias,
+                                  const Tensor& _mean,
+                                  const Tensor& _var)
 {
   // key is (inputN, inputC, inputH, inputW)
   BatchNormKey key(_input);
@@ -56,8 +56,12 @@ Op Model::get_or_create_batchnorm(Tensor _input,
   return ret;
 }
 
-BatchNorm::BatchNorm(Model* _model, Tensor _input, Tensor _scale,
-                     Tensor _bias, Tensor _mean, Tensor _var)
+BatchNorm::BatchNorm(Model* _model,
+                     const Tensor& _input,
+                     const Tensor& _scale,
+                     const Tensor& _bias,
+                     const Tensor& _mean,
+                     const Tensor& _var)
 : OpBase(_input, _scale, _bias, _mean, _var, _model, OP_BATCHNORM)
 {
   assert(_input.numDim == 4);
@@ -93,7 +97,7 @@ void BatchNorm::collect_costs(float& exe_time, float& flops,
 }
 
 // key is (_input)
-BatchNormKey::BatchNormKey(Tensor _input)
+BatchNormKey::BatchNormKey(const Tensor& _input)
 {
   int idx = 0;
   _input.serialize(keys, idx);
