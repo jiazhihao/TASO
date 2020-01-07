@@ -741,6 +741,8 @@ void Graph::replace_node(Op oldOp, Op newOp)
   for (size_t i = 0; i < outList.size(); i++) {
     Edge e = outList[i];
     remove_edge(e);
+    // update input ptr of dstOp to newOp.output
+    e.dstOp.ptr->inputs[e.dstIdx] = newOp.ptr->outputs[e.srcIdx];
     add_edge(newOp, e.dstOp, e.srcIdx, e.dstIdx);
   }
 }
@@ -1009,7 +1011,7 @@ void Graph::print(void)
   std::map<Op, std::set<Edge, EdgeCompare>, OpCompare>::const_iterator it;
   for (it = inEdges.begin(); it != inEdges.end(); it++) {
     if (it->first.guid == 0) continue;
-    printf("	guid(%zu) type(%d) runtime(%.4lf): ", it->first.guid, it->first.ptr->type, it->first.ptr->runtime);
+    printf("	guid(%zu) type(%d) runtime(%.4lf): ", it->first.guid, it->first.ptr->type, it->first.ptr->runtime);    
     std::set<Edge, EdgeCompare> list = it->second;
     std::set<Edge, EdgeCompare>::const_iterator it2;
     for (it2 = list.begin(); it2 != list.end(); it2++) {
@@ -1017,6 +1019,9 @@ void Graph::print(void)
       printf(" inEdge(guid(%zu) idx(%d))", e.srcOp.guid, e.srcIdx);
     }
     printf("\n");
+    if (it->first.ptr->type==3) {
+      it->first.ptr->inputs[1].print_info("conv weight");
+    }
   }
 }
 
@@ -1334,8 +1339,9 @@ void Graph::print_costs(void)
   float exe_time = 0, flops = 0, mem_acc = 0;
   int num_kernels = 0;
   std::map<Op, std::set<Edge, EdgeCompare>, OpCompare>::const_iterator it;
-  for (it = inEdges.begin(); it != inEdges.end(); it++)
+  for (it = inEdges.begin(); it != inEdges.end(); it++) {
     it->first.ptr->collect_costs(exe_time, flops, mem_acc, num_kernels);
+  }
   printf("        Cost metrics: exe_time(%.4lf) flops(%.4lf) "
          "memory_access(%.4lf) kernel_launches(%d)\n",
          exe_time, flops / 1024.0 / 1024.0 / 1024.0,

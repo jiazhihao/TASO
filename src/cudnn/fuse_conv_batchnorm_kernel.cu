@@ -29,7 +29,7 @@ void fuse_conv_batchnorm_kernel(int c_out,
   CUDA_KERNEL_LOOP(i, volume)
   {
     int c_out_idx = i / c_in_h_w;
-    dst_ptr[i] = scale[c_out_idx] * conv_w[i] / sqrt(abs(var[i]) + CUDNN_BN_MIN_EPSILON);
+    dst_ptr[i] = scale[c_out_idx] * conv_w[i] / sqrt(abs(var[c_out_idx]) + CUDNN_BN_MIN_EPSILON);
   }
 }
 
