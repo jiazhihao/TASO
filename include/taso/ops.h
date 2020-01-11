@@ -133,6 +133,8 @@ enum OpType {
   OP_PRELU, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#PRelu
   OP_FUSE_CONV_BATCHNORM,
   OP_FUSE_CONV_BATCHNORM_ALPHA_VAR,
+  OP_FUSE_CONV_BATCHNORM_BIAS,
+  OP_BROADCAST_ADD
 };
 
 struct Op {
@@ -488,6 +490,8 @@ public:
          Model* _model, OpType _type);
   OpBase(const Tensor& input0, const Tensor& input1, const Tensor& input2,
          Model* _model, OpType _type);
+  OpBase(const Tensor& input0, const Tensor& input1, const Tensor& input2,
+         const Tensor& input3, Model* _model, OpType _type);
   OpBase(const Tensor& input0, const Tensor& input1,
          const Tensor& input2, const Tensor& input3,
          const Tensor& input4, Model* _model, OpType _type);
@@ -570,6 +574,12 @@ public:
   // TensorHandle fuse_conv_batchnorm_alpha_var(const TensorHandle _conv_w,
   //                                  const TensorHandle _scale,
   //                                  const TensorHandle _var);
+  TensorHandle fuse_conv_batchnorm_bias(const TensorHandle _scale,
+                                   const TensorHandle _bias,
+                                   const TensorHandle _mean,
+                                   const TensorHandle _var);
+  TensorHandle broadcast_add(const TensorHandle _data,
+                                   const TensorHandle _bias);
 
   TensorHandle leakyrelu(const TensorHandle _input, float _alpha,
                          bool _inplace=true);
@@ -938,6 +948,29 @@ public:
   void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
 };
 
+class FuseConvBatchNormBias : public OpBase {
+public:
+  FuseConvBatchNormBias(Model* _model, const Tensor& _scale,
+                    const Tensor& _bias, const Tensor& _mean, const Tensor& _var);
+  ~FuseConvBatchNormBias(void);
+  bool get_int_parameter(PMParameter para, int*);
+  void forward(bool block);
+  void map(void);
+  void unmap(void);
+  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
+};
+
+class BroadcastAdd : public OpBase {
+public:
+  BroadcastAdd(Model* _model, const Tensor& _data, const Tensor& _bias);
+  ~BroadcastAdd(void);
+  bool get_int_parameter(PMParameter para, int*);
+  void forward(bool block);
+  void map(void);
+  void unmap(void);
+  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
+};
+
 class MergeGConv : public OpBase {
 public:
   MergeGConv(Model* _model, const Tensor& _weight, int count);
@@ -1203,9 +1236,21 @@ struct FuseConvBatchNormKey {
   int keys[KEY_LENGTH];
 };
 
+struct FuseConvBatchNormBiasKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH;
+  FuseConvBatchNormBiasKey(const Tensor& _scale);
+  int keys[KEY_LENGTH];
+};
+
 struct FuseConvBatchNormAlphaVarKey {
   static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH;
   FuseConvBatchNormAlphaVarKey(const Tensor& conv_w);
+  int keys[KEY_LENGTH];
+};
+
+struct BroadcastAddKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH;
+  BroadcastAddKey(const Tensor& data);
   int keys[KEY_LENGTH];
 };
 
@@ -1353,6 +1398,12 @@ public:
   Op get_or_create_fuse_conv_batchnorm_alpha_var(const Tensor& _conv_w,
                                        const Tensor& _scale,
                                        const Tensor& _var);
+  Op get_or_create_fuse_conv_batchnorm_bias(const Tensor& _scale,
+                                       const Tensor& _bias,
+                                       const Tensor& _mean,
+                                       const Tensor& _var);
+  Op get_or_create_broadcast_add(const Tensor& _data,
+                                 const Tensor& _bias);
   Op get_or_create_matmul(Tensor _input, Tensor _weight,
                           ActiMode _actimode);
   Op get_or_create_mul(const Tensor& x,
@@ -1460,6 +1511,8 @@ public:
   std::map<EnlargeKey, Enlarge*, KeyCompare<EnlargeKey> > enlarge;
   std::map<FuseConvBatchNormKey, FuseConvBatchNorm*, KeyCompare<FuseConvBatchNormKey> > fuse_conv_batchnorm;
   std::map<FuseConvBatchNormAlphaVarKey, FuseConvBatchNormAlphaVar*, KeyCompare<FuseConvBatchNormAlphaVarKey> > fuse_conv_batchnorm_alpha_var;
+  std::map<FuseConvBatchNormBiasKey, FuseConvBatchNormBias*, KeyCompare<FuseConvBatchNormBiasKey> > fuse_conv_batchnorm_bias;
+  std::map<BroadcastAddKey, BroadcastAdd*, KeyCompare<BroadcastAddKey> > broadcast_add;
   std::map<MatmulKey, Matmul*, KeyCompare<MatmulKey> > matmul;
   std::map<MergeGConvKey, MergeGConv*, KeyCompare<MergeGConvKey> > merge_gconv;
   std::map<MulKey, Mul*, KeyCompare<MulKey> > mul;

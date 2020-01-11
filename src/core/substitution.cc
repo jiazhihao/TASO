@@ -89,11 +89,15 @@ GraphXfer* GraphXfer::create_conv_batch(Model* model, int strideH, int strideW, 
   OpX* fuse = subst->create_fuse_conv_batchnorm_alpha_var(weight, w[0], w[3], false/*isSrc*/); // alpha, var
   OpX* new_conv = subst->create_conv2d(input, fuse->outputs[0], strideH, strideW, mode,
                                        AC_MODE_NONE, false/*isSrc*/);
-  subst->map_output(batch->outputs[0], new_conv->outputs[0]);
+  OpX* bias = subst->create_fuse_conv_batchnorm_bias(w[0], w[1], w[2], w[3], false);
+  OpX* add = subst->create_broadcast_add(new_conv->outputs[0], bias->outputs[0], false);
+  subst->map_output(batch->outputs[0], add->outputs[0]);
   subst->srcOps.push_back(conv);
   subst->srcOps.push_back(batch);
   subst->dstOps.push_back(fuse);
   subst->dstOps.push_back(new_conv);
+  subst->dstOps.push_back(bias);
+  subst->dstOps.push_back(add);
   return subst;
 }
 
@@ -497,6 +501,7 @@ OpX::OpX(OpType _type, TensorX in1, TensorX in2)
     case OP_MATMUL:
     case OP_MUL:
     case OP_ENLARGE:
+    case OP_BROADCAST_ADD:
       outputs.push_back(out);
       break;
     default:
@@ -513,6 +518,22 @@ OpX::OpX(OpType _type, TensorX in1, TensorX in2, TensorX in3)
   TensorX out(this, 0);
   switch (type) {
     case OP_FUSE_CONV_BATCHNORM_ALPHA_VAR:
+      outputs.push_back(out);
+      break;
+    default:
+      assert(false);
+  }
+}
+OpX::OpX(OpType _type, TensorX in1, TensorX in2, TensorX in3, TensorX in4)
+: type(_type)
+{
+  inputs.push_back(in1);
+  inputs.push_back(in2);
+  inputs.push_back(in3);
+  inputs.push_back(in4);
+  TensorX out(this, 0);
+  switch (type) {
+    case OP_FUSE_CONV_BATCHNORM_BIAS:
       outputs.push_back(out);
       break;
     default:
@@ -698,6 +719,21 @@ OpX* GraphXfer::create_fuse_conv_batchnorm_alpha_var(TensorX conv_w, TensorX sca
   OpX* fuse = new OpX(OP_FUSE_CONV_BATCHNORM_ALPHA_VAR, conv_w, scale, var);
   return fuse;
 }
+
+OpX* GraphXfer::create_fuse_conv_batchnorm_bias(TensorX scale,
+                                           TensorX bias, TensorX mean,
+                                           TensorX var, bool isSrcOp)
+{
+  OpX* fuse = new OpX(OP_FUSE_CONV_BATCHNORM_BIAS, scale, bias, mean, var);
+  return fuse;
+}
+
+OpX* GraphXfer::create_broadcast_add(TensorX data, TensorX bias, bool isSrcOp)
+{
+  OpX* fuse = new OpX(OP_BROADCAST_ADD, data, bias);
+  return fuse;
+}
+
 
 OpX* GraphXfer::create_pool2d_avg(TensorX input, TensorX weight,
                                   int strideH, int strideW,
@@ -1210,6 +1246,16 @@ bool GraphXfer::create_new_operator(const OpX* opx, Op& op)
       op = model->get_or_create_fuse_conv_batchnorm(conv_w, scale, bias, mean, var);
       break;
     }
+    case OP_FUSE_CONV_BATCHNORM_BIAS:
+    {
+      assert(opx->inputs.size() == 4);
+      Tensor scale = opx->inputs[0].to_tensor(this);
+      Tensor bias = opx->inputs[1].to_tensor(this);
+      Tensor mean = opx->inputs[2].to_tensor(this);
+      Tensor var = opx->inputs[3].to_tensor(this);
+      op = model->get_or_create_fuse_conv_batchnorm_bias(scale, bias, mean, var);
+      break;
+    }
     case OP_FUSE_CONV_BATCHNORM_ALPHA_VAR:
     {
       assert(opx->inputs.size() == 3);
@@ -1217,6 +1263,14 @@ bool GraphXfer::create_new_operator(const OpX* opx, Op& op)
       Tensor scale = opx->inputs[1].to_tensor(this);
       Tensor var = opx->inputs[2].to_tensor(this);
       op = model->get_or_create_fuse_conv_batchnorm_alpha_var(conv_w, scale, var);
+      break;
+    }
+    case OP_BROADCAST_ADD:
+    {
+      assert(opx->inputs.size() == 2);
+      Tensor _data = opx->inputs[0].to_tensor(this);
+      Tensor _bias = opx->inputs[1].to_tensor(this);
+      op = model->get_or_create_broadcast_add(_data, _bias);
       break;
     }
     case OP_MATMUL:

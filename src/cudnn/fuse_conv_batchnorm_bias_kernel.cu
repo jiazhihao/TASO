@@ -18,43 +18,44 @@
 using namespace taso;
 
 __global__
-void fuse_conv_batchnorm_alpha_var_kernel(int c_out,
-                                int c_in_h_w,
+void fuse_conv_batchnorm_bias_kernel(int volume,
                                 DATATYPE* dst_ptr,
-                                DATATYPE* conv_w,
                                 DATATYPE* scale,
+                                DATATYPE* beta,
+                                DATATYPE* mean,
                                 DATATYPE* var)
 {
-  int volume = c_out * c_in_h_w;
+  // int i = blockIdx.x * blockDim.x + threadIdx.x;
   CUDA_KERNEL_LOOP(i, volume)
   {
-    int c_out_idx = i / c_in_h_w;
-    dst_ptr[i] = scale[c_out_idx] * conv_w[i] / sqrt(abs(var[c_out_idx]) + CUDNN_BN_MIN_EPSILON);
+    dst_ptr[i] = beta[i] - scale[i] * mean[i] / sqrt(var[i] + CUDNN_BN_MIN_EPSILON);
   }
 }
 
-void FuseConvBatchNormAlphaVar::map(void)
+void FuseConvBatchNormBias::map(void)
 {
-  assert(inputs[0].numDim == 4);
+  assert(inputs[0].numDim == 1);
+  assert(inputs[1].numDim == 1);
+  assert(inputs[2].numDim == 1);
+  assert(inputs[3].numDim == 1);
   size_t outputSize = sizeof(DATATYPE) * outputs[0].volume();
   checkCUDA(cudaMalloc(&outputs[0].data_ptr, outputSize));
 }
 
-void FuseConvBatchNormAlphaVar::unmap(void)
+void FuseConvBatchNormBias::unmap(void)
 {
   checkCUDA(cudaFree(outputs[0].data_ptr));
 }
 
-void FuseConvBatchNormAlphaVar::forward(bool block)
+void FuseConvBatchNormBias::forward(bool block)
 {
-  int c_out = outputs[0].dim[0];
-  int c_in_h_w = outputs[0].volume() / c_out;
-  DATATYPE* conv_w_ptr = (DATATYPE*) inputs[0].data_ptr;
-  DATATYPE* scale_ptr = (DATATYPE*) inputs[1].data_ptr;
-  DATATYPE* var_ptr = (DATATYPE*) inputs[2].data_ptr;
-  fuse_conv_batchnorm_alpha_var_kernel<<<GET_BLOCKS(outputs[0].volume()), CUDA_NUM_THREADS>>>(
-      c_out, c_in_h_w, (DATATYPE*)outputs[0].data_ptr,
-      conv_w_ptr, scale_ptr, var_ptr);
+  int volume = outputs[0].volume();
+  DATATYPE* scale_ptr = (DATATYPE*) inputs[0].data_ptr;
+  DATATYPE* beta_ptr = (DATATYPE*) inputs[1].data_ptr;
+  DATATYPE* mean_ptr = (DATATYPE*) inputs[2].data_ptr;
+  DATATYPE* var_ptr = (DATATYPE*) inputs[3].data_ptr;
+  fuse_conv_batchnorm_bias_kernel<<<GET_BLOCKS(outputs[0].volume()), CUDA_NUM_THREADS>>>(
+      volume, (DATATYPE*)outputs[0].data_ptr, scale_ptr, beta_ptr, mean_ptr, var_ptr);
   if (block)
     checkCUDA(cudaDeviceSynchronize());
 }

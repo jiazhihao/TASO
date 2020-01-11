@@ -125,6 +125,25 @@ OpBase::OpBase(const Tensor& _input0,
                const Tensor& _input1,
                const Tensor& _input2,
                const Tensor& _input3,
+               Model* _model, OpType _type)
+: numInputs(5), model(_model), type(_type), runtime(0.0f)
+{
+  inputs[0] = _input0;
+  inputs[1] = _input1;
+  inputs[2] = _input2;
+  inputs[3] = _input3;
+  for (int i = 0; i < MAX_NUM_OUTPUTS; i++) {
+    outputs[i].numDim = 0;
+    for (int j = 0; j < MAX_DIM; j++)
+      outputs[i].dim[j] = 0;
+  }
+}
+
+
+OpBase::OpBase(const Tensor& _input0,
+               const Tensor& _input1,
+               const Tensor& _input2,
+               const Tensor& _input3,
                const Tensor& _input4,
                Model* _model, OpType _type)
 : numInputs(5), model(_model), type(_type), runtime(0.0f)
@@ -1019,9 +1038,18 @@ void Graph::print(void)
       printf(" inEdge(guid(%zu) idx(%d))", e.srcOp.guid, e.srcIdx);
     }
     printf("\n");
-    if (it->first.ptr->type==3) {
-      it->first.ptr->inputs[1].print_info("conv weight");
-    }
+    // if (it->first.ptr->type == OP_CONV2D) {
+    //   it->first.ptr->inputs[1].print_info("conv weight");
+    // }
+    // else if (it->first.ptr->type == OP_BROADCAST_ADD) {
+    //   it->first.ptr->inputs[1].print_info("conv new bias");
+    // }
+    // else if (it->first.ptr->type == OP_BATCHNORM) {
+    //   it->first.ptr->inputs[1].print_info("gamma");
+    //   it->first.ptr->inputs[2].print_info("beta");
+    //   it->first.ptr->inputs[3].print_info("mean");
+    //   it->first.ptr->inputs[4].print_info("var");
+    // }
   }
 }
 

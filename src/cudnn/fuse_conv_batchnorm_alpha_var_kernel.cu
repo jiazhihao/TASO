@@ -36,6 +36,8 @@ void fuse_conv_batchnorm_alpha_var_kernel(int c_out,
 void FuseConvBatchNormAlphaVar::map(void)
 {
   assert(inputs[0].numDim == 4);
+  assert(inputs[1].numDim == 1);
+  assert(inputs[2].numDim == 1);
   size_t outputSize = sizeof(DATATYPE) * outputs[0].volume();
   checkCUDA(cudaMalloc(&outputs[0].data_ptr, outputSize));
 }
