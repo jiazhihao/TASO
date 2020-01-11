@@ -93,6 +93,9 @@ cdef extern from "taso/ops.h" namespace "taso":
         OP_RESIZE,
         OP_PRELU,
         OP_FUSE_CONV_BATCHNORM,
+        OP_FUSE_CONV_BATCHNORM_ALPHA_VAR,
+        OP_FUSE_CONV_BATCHNORM_BIAS,
+        OP_BROADCAST_ADD
 
     # This must be consistent with include/taso/ops.h
     cdef enum PMParameter:
