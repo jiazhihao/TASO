@@ -85,7 +85,8 @@ GraphXfer* GraphXfer::create_conv_batch(Model* model, int strideH, int strideW, 
     w[i] = subst->new_tensor();
   OpX* conv = subst->create_conv2d(input, weight, strideH, strideW, mode, AC_MODE_NONE);
   OpX* batch = subst->create_batchnorm(conv->outputs[0], w[0], w[1], w[2], w[3]);
-  OpX* fuse = subst->create_fuse_conv_batchnorm(weight, w[0], w[1], w[2], w[3], false/*isSrc*/);
+  // OpX* fuse = subst->create_fuse_conv_batchnorm(weight, w[0], w[1], w[2], w[3], false/*isSrc*/);
+  OpX* fuse = subst->create_fuse_conv_batchnorm_alpha_var(weight, w[0], w[3], false/*isSrc*/); // alpha, var
   OpX* new_conv = subst->create_conv2d(input, fuse->outputs[0], strideH, strideW, mode,
                                        AC_MODE_NONE, false/*isSrc*/);
   subst->map_output(batch->outputs[0], new_conv->outputs[0]);
@@ -503,6 +504,22 @@ OpX::OpX(OpType _type, TensorX in1, TensorX in2)
   }
 }
 
+OpX::OpX(OpType _type, TensorX in1, TensorX in2, TensorX in3)
+: type(_type)
+{
+  inputs.push_back(in1);
+  inputs.push_back(in2);
+  inputs.push_back(in3);
+  TensorX out(this, 0);
+  switch (type) {
+    case OP_FUSE_CONV_BATCHNORM_ALPHA_VAR:
+      outputs.push_back(out);
+      break;
+    default:
+      assert(false);
+  }
+}
+
 OpX::OpX(OpType _type, TensorX in1, TensorX in2, TensorX in3, TensorX in4, TensorX in5)
 : type(_type)
 {
@@ -672,6 +689,13 @@ OpX* GraphXfer::create_fuse_conv_batchnorm(TensorX conv_w, TensorX scale,
                                            TensorX var, bool isSrcOp)
 {
   OpX* fuse = new OpX(OP_FUSE_CONV_BATCHNORM, conv_w, scale, bias, mean, var);
+  return fuse;
+}
+
+OpX* GraphXfer::create_fuse_conv_batchnorm_alpha_var(TensorX conv_w, TensorX scale,
+                                           TensorX var, bool isSrcOp)
+{
+  OpX* fuse = new OpX(OP_FUSE_CONV_BATCHNORM_ALPHA_VAR, conv_w, scale, var);
   return fuse;
 }
 
@@ -1184,6 +1208,15 @@ bool GraphXfer::create_new_operator(const OpX* opx, Op& op)
       Tensor mean = opx->inputs[3].to_tensor(this);
       Tensor var = opx->inputs[4].to_tensor(this);
       op = model->get_or_create_fuse_conv_batchnorm(conv_w, scale, bias, mean, var);
+      break;
+    }
+    case OP_FUSE_CONV_BATCHNORM_ALPHA_VAR:
+    {
+      assert(opx->inputs.size() == 3);
+      Tensor conv_w = opx->inputs[0].to_tensor(this);
+      Tensor scale = opx->inputs[1].to_tensor(this);
+      Tensor var = opx->inputs[2].to_tensor(this);
+      op = model->get_or_create_fuse_conv_batchnorm_alpha_var(conv_w, scale, var);
       break;
     }
     case OP_MATMUL:

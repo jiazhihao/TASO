@@ -132,6 +132,7 @@ enum OpType {
   OP_RESIZE, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#Resize
   OP_PRELU, //https://github.com/onnx/onnx/blob/master/docs/Operators.md#PRelu
   OP_FUSE_CONV_BATCHNORM,
+  OP_FUSE_CONV_BATCHNORM_ALPHA_VAR,
 };
 
 struct Op {
@@ -566,6 +567,10 @@ public:
                                    const TensorHandle _bias,
                                    const TensorHandle _mean,
                                    const TensorHandle _var);
+  // TensorHandle fuse_conv_batchnorm_alpha_var(const TensorHandle _conv_w,
+  //                                  const TensorHandle _scale,
+  //                                  const TensorHandle _var);
+
   TensorHandle leakyrelu(const TensorHandle _input, float _alpha,
                          bool _inplace=true);
   TensorHandle log(const TensorHandle _input);
@@ -922,6 +927,17 @@ public:
   void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
 };
 
+class FuseConvBatchNormAlphaVar : public OpBase {
+public:
+  FuseConvBatchNormAlphaVar(Model* _model, const Tensor& _conv_w, const Tensor& _scale, const Tensor& _var);
+  ~FuseConvBatchNormAlphaVar(void);
+  bool get_int_parameter(PMParameter para, int*);
+  void forward(bool block);
+  void map(void);
+  void unmap(void);
+  void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
+};
+
 class MergeGConv : public OpBase {
 public:
   MergeGConv(Model* _model, const Tensor& _weight, int count);
@@ -1187,6 +1203,12 @@ struct FuseConvBatchNormKey {
   int keys[KEY_LENGTH];
 };
 
+struct FuseConvBatchNormAlphaVarKey {
+  static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH;
+  FuseConvBatchNormAlphaVarKey(const Tensor& conv_w);
+  int keys[KEY_LENGTH];
+};
+
 struct TopKKey {
   static const int KEY_LENGTH = Tensor::MAX_KEY_LENGTH + 4;
   TopKKey(const Tensor& _input, int _axis, int _numk, bool _largest, bool _sorted);
@@ -1328,6 +1350,9 @@ public:
                                        const Tensor& _bias,
                                        const Tensor& _mean,
                                        const Tensor& _var);
+  Op get_or_create_fuse_conv_batchnorm_alpha_var(const Tensor& _conv_w,
+                                       const Tensor& _scale,
+                                       const Tensor& _var);
   Op get_or_create_matmul(Tensor _input, Tensor _weight,
                           ActiMode _actimode);
   Op get_or_create_mul(const Tensor& x,
@@ -1434,6 +1459,7 @@ public:
   std::map<ElementWiseUnaryKey, ElementWiseUnary*, KeyCompare<ElementWiseUnaryKey> > element_unary;
   std::map<EnlargeKey, Enlarge*, KeyCompare<EnlargeKey> > enlarge;
   std::map<FuseConvBatchNormKey, FuseConvBatchNorm*, KeyCompare<FuseConvBatchNormKey> > fuse_conv_batchnorm;
+  std::map<FuseConvBatchNormAlphaVarKey, FuseConvBatchNormAlphaVar*, KeyCompare<FuseConvBatchNormAlphaVarKey> > fuse_conv_batchnorm_alpha_var;
   std::map<MatmulKey, Matmul*, KeyCompare<MatmulKey> > matmul;
   std::map<MergeGConvKey, MergeGConv*, KeyCompare<MergeGConvKey> > merge_gconv;
   std::map<MulKey, Mul*, KeyCompare<MulKey> > mul;
