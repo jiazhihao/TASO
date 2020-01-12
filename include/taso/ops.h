@@ -360,37 +360,6 @@ struct Tensor {
     return true;
   }
 
-  void print_info(string name) const{
-    printf("%s address:%x\n", name.c_str(), data_ptr);
-    float* h_data_ptr = new float[volume()];
-    cudaMemcpy(h_data_ptr, data_ptr, volume()*sizeof(float), cudaMemcpyDeviceToHost);
-    int ndim = numDim;
-    int dims[4] = {0};
-    for (int i=0; i < ndim; i++) dims[i] = dim[i];
-    if (ndim==4) {
-      for(int i=0;i<1; i++) {
-        for(int j=0;j<dims[1]; j++) {
-          for(int k=0; k<dims[2]; k++) {
-            for(int q=0; q<dims[3]; q++) {
-              printf("%f ", *(h_data_ptr + ((((i * dims[1]) + j)*dims[2])+k)*dims[3] + q));
-            }
-            printf("\n");
-          }
-          printf("\n");
-        }
-        printf("\n");
-      }
-      printf("\n");
-    }
-    else {
-      for(int i=0;i<dims[0]; i++) {
-        printf("%f ", *( h_data_ptr + i));
-      }
-      printf("\n");
-    }
-    delete[] h_data_ptr;
-  }
-
   //bool operator==(const Tensor& b);
   int numDim, dim[MAX_DIM], stride[MAX_DIM];
   int idx; // idx is used for Ops with multiple outputs (e.g., split)
