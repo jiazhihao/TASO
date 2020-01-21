@@ -150,6 +150,8 @@ op_table[OP_LOGICAL_NOT] = "Not"
 op_table[OP_SQRT] = "Sqrt"
 op_table[OP_SLICE] = "Slice"
 op_table[OP_RESIZE] = "Resize"
+# op_table[OP_BROADCAST_ADD] = "BroadcastAdd"
+op_table[OP_BROADCAST_ADD] = "Add"
 
 cdef class PyGraph:
     cdef Graph *p_graph #Hold a Graph instance

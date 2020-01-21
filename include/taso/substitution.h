@@ -69,6 +69,8 @@ public:
   OpX(const OpX& _op);
   OpX(OpType _type, TensorX input0, int numOutputs = 1);
   OpX(OpType _type, TensorX input0, TensorX input1);
+  OpX(OpType _type, TensorX input0, TensorX input1, TensorX input2);
+  OpX(OpType _type, TensorX input0, TensorX input1, TensorX input2, TensorX input3);
   OpX(OpType _type, TensorX input0, TensorX input1, TensorX input2, TensorX input3, TensorX input4);
   OpX(OpType _type, int n, TensorX* ins);
   bool add_pm_constraint(Compare comp, PMParameter para, int value);
@@ -162,6 +164,12 @@ public:
   OpX* create_fuse_conv_batchnorm(TensorX conv_w, TensorX scale,
                                   TensorX bias, TensorX mean, TensorX var,
                                   bool isSrcOp = true);
+  OpX* create_fuse_conv_batchnorm_alpha_var(TensorX conv_w, TensorX scale, 
+                                            TensorX var, bool isSrcOp = true);
+  OpX* create_fuse_conv_batchnorm_bias(TensorX scale,
+                                           TensorX bias, TensorX mean,
+                                           TensorX var, bool isSrcOp = true);
+  OpX* create_broadcast_add(TensorX data, TensorX bias, bool isSrcOp = true);
   OpX* create_pool2d_avg(TensorX input, TensorX weight,
                          //int kernelH, int kernelW,
                          int strideH, int strideW,

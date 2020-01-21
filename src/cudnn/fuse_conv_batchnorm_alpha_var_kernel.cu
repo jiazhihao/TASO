@@ -18,7 +18,7 @@
 using namespace taso;
 
 __global__
-void fuse_conv_batchnorm_kernel(int c_out,
+void fuse_conv_batchnorm_alpha_var_kernel(int c_out,
                                 int c_in_h_w,
                                 DATATYPE* dst_ptr,
                                 DATATYPE* conv_w,
@@ -33,26 +33,28 @@ void fuse_conv_batchnorm_kernel(int c_out,
   }
 }
 
-void FuseConvBatchNorm::map(void)
+void FuseConvBatchNormAlphaVar::map(void)
 {
   assert(inputs[0].numDim == 4);
+  assert(inputs[1].numDim == 1);
+  assert(inputs[2].numDim == 1);
   size_t outputSize = sizeof(DATATYPE) * outputs[0].volume();
   checkCUDA(cudaMalloc(&outputs[0].data_ptr, outputSize));
 }
 
-void FuseConvBatchNorm::unmap(void)
+void FuseConvBatchNormAlphaVar::unmap(void)
 {
   checkCUDA(cudaFree(outputs[0].data_ptr));
 }
 
-void FuseConvBatchNorm::forward(bool block)
+void FuseConvBatchNormAlphaVar::forward(bool block)
 {
   int c_out = outputs[0].dim[0];
   int c_in_h_w = outputs[0].volume() / c_out;
   DATATYPE* conv_w_ptr = (DATATYPE*) inputs[0].data_ptr;
   DATATYPE* scale_ptr = (DATATYPE*) inputs[1].data_ptr;
-  DATATYPE* var_ptr = (DATATYPE*) inputs[4].data_ptr;
-  fuse_conv_batchnorm_kernel<<<GET_BLOCKS(outputs[0].volume()), CUDA_NUM_THREADS>>>(
+  DATATYPE* var_ptr = (DATATYPE*) inputs[2].data_ptr;
+  fuse_conv_batchnorm_alpha_var_kernel<<<GET_BLOCKS(outputs[0].volume()), CUDA_NUM_THREADS>>>(
       c_out, c_in_h_w, (DATATYPE*)outputs[0].data_ptr,
       conv_w_ptr, scale_ptr, var_ptr);
   if (block)
