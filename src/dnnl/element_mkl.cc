@@ -43,6 +43,12 @@ void elementwise_kernel(int volume, OpType type,
     }
 
     switch (type) {
+      case OP_EW_ADD:
+        z[zid] = x[xid] + y[yid];
+        break;
+      case OP_EW_MUL:
+        z[zid] = x[xid] * y[yid];
+        break;
       case OP_EW_SUB:
         z[zid] = x[xid] - y[yid];
         break;
@@ -78,10 +84,15 @@ bool Element::use_kernel(void) const
   switch (type) {
     case OP_EW_ADD:
     case OP_EW_MUL:
-      return true;
+      break;
     default:
       return false;
   }
+
+  // dnnl::binary requires the same layout between output and inputs[0].
+  if (!outputs[0].has_same_shape_stride_split(inputs[0])) return false;
+
+  return true;
 }
 
 static void create_net(Element* ele, DNNLNet& net, engine& eng, stream& strm,
