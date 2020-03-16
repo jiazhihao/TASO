@@ -34,7 +34,7 @@ TensorHandle attention(Graph* graph, const TensorHandle input, int heads) {
   v = graph->reshape(v, { -1, heads, d_k });
   // transpose query, key, value for batched matmul
   q = graph->transpose(q, { 1, 0, 2 }, true);
-  k = graph->transpose(k, { 1, 0, 2 }, true);
+  k = graph->transpose(k, { 1, 2, 0 }, true);
   v = graph->transpose(v, { 1, 0, 2 }, true);
   // perform matrix multiplications
   auto logits = graph->matmul(q, k);
@@ -45,7 +45,7 @@ TensorHandle attention(Graph* graph, const TensorHandle input, int heads) {
 
   // a final linear layer
   auto linear = new_random_weight(graph, { d_model, d_model });
-  output = graph->matmul(input, linear);
+  output = graph->matmul(output, linear);
   return output;
 }
 
