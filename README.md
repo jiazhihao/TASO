@@ -11,7 +11,7 @@ TASO outperforms the graph optimizers in existing deep learning frameworks by [u
 
 ## Install TASO
 
-See [instructions](https://github.com/jiazhihao/TASO/blob/master/INSTALL.md) to install TASO from source.
+See [instructions](INSTALL.md) to install TASO from source.
 We also provide prebuilt [docker images](https://github.com/jiazhihao/TASO/blob/master/INSTALL.md) with all dependencies pre-installed.
 
 ## Use TASO
