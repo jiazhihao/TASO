@@ -15,7 +15,6 @@
 
 #include "taso/ops.h"
 #include "taso/dnnl_helper.h"
-#include <cfloat>
 using namespace taso;
 using namespace dnnl;
 
@@ -23,7 +22,7 @@ static void create_net(BatchNorm* bn, DNNLNet& net, engine& eng, stream& strm,
     memory& inputMem, memory& outputMem, memory& meanMem, memory& varMem, memory& scaleShiftMem,
     void* inputPtr, void* outputPtr, void* meanPtr, void* varPtr, void* biasPtr,
     bool isTraining) {
-  const float eps = FLT_EPSILON;
+  const float eps = BN_MIN_EPSILON;
   // dimensions.
   int inputC = bn->inputs[0].dim[1];
   // data sizes.

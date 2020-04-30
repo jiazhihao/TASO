@@ -18,7 +18,7 @@
 using namespace taso;
 using namespace dnnl;
 
-void fuse_conv_batchnorm_kernel(int c_out, int c_in_h_w,
+void fuse_conv_batchnorm_alpha_var_kernel(int c_out, int c_in_h_w,
     DATATYPE* dst_ptr, const DATATYPE* conv_w, const DATATYPE* scale, const DATATYPE* var) {
   int volume = c_out * c_in_h_w;
 #pragma omp parallel for
@@ -28,15 +28,17 @@ void fuse_conv_batchnorm_kernel(int c_out, int c_in_h_w,
   }
 }
 
-void FuseConvBatchNorm::map(void)
+void FuseConvBatchNormAlphaVar::map(void)
 {
   assert(inputs[0].numDim == 4);
+  assert(inputs[1].numDim == 1);
+  assert(inputs[2].numDim == 1);
   // allocate tensors
   size_t outputSize = sizeof(DATATYPE) * outputs[0].volume();
   CHECK_NE(nullptr, outputs[0].data_ptr = malloc(outputSize));
 }
 
-void FuseConvBatchNorm::unmap(void)
+void FuseConvBatchNormAlphaVar::unmap(void)
 {
   // clear primitives
   net.clear();
@@ -45,14 +47,14 @@ void FuseConvBatchNorm::unmap(void)
   outputs[0].data_ptr = nullptr;
 }
 
-void FuseConvBatchNorm::forward(bool block)
+void FuseConvBatchNormAlphaVar::forward(bool block)
 {
   int c_out = outputs[0].dim[0];
   int c_in_h_w = outputs[0].volume() / c_out;
   DATATYPE* conv_w_ptr = (DATATYPE*) inputs[0].data_ptr;
   DATATYPE* scale_ptr = (DATATYPE*) inputs[1].data_ptr;
   DATATYPE* var_ptr = (DATATYPE*) inputs[2].data_ptr;
-  fuse_conv_batchnorm_kernel(c_out, c_in_h_w,
+  fuse_conv_batchnorm_alpha_var_kernel(c_out, c_in_h_w,
       (DATATYPE*)outputs[0].data_ptr, conv_w_ptr, scale_ptr, var_ptr);
 }
 
