@@ -19,6 +19,7 @@
 #include <sstream>
 #include <iostream>
 #include <algorithm>
+#include <cfloat>
 #include <chrono>
 #include <cstring>
 #include "taso/ops.h"
@@ -39,6 +40,8 @@
   _ERROR_HEAD << "value == " << STR(notExpect) << std::endl;            \
   exit(1);                                                              \
 }
+
+static constexpr taso::DATATYPE BN_MIN_EPSILON = FLT_EPSILON;
 
 inline uint64_t microsecond_timer() {
   auto t = std::chrono::steady_clock::now();
