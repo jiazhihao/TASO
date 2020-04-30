@@ -1,4 +1,4 @@
-# TASO: A Tensor Algebra SuperOptimizer for Deep Learning
+# TASO: The Tensor Algebra SuperOptimizer for Deep Learning
 
 TASO optimizes the computation graphs of DNN models using automatically generated and verified graph transformations.
 For an arbitrary DNN model, TASO uses the auto-generated graph transformations to build a large search space of potential computation graphs that are equivalent to the original DNN model.
