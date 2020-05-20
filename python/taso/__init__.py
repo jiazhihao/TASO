@@ -488,6 +488,13 @@ def _shape(op, graph, tensors, initializer):
     outputs = graph.shape(inputs[0])
     return outputs
 
+def _sigmoid(op, graph, tensors, initializer):
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "Sigmoid requires exactly one input"
+    attrs = _parse_attribute(op.attribute)
+    outputs = graph.sigmoid(input=inputs[0])
+    return outputs
+
 def _size(op, graph, tensors, initializer):
     inputs = _get_inputs(op, graph, tensors, initializer)
     assert len(inputs) == 1, "Size requires exactly one input"
@@ -688,7 +695,6 @@ def load_onnx(filename):
 
     @params
     filename is a string containing a file name
-    
     @return
     Loaded in-memory Graph
     '''
@@ -845,7 +851,6 @@ def _add_node_attribute(graph, node, op, optype):
 def export_onnx(graph):
     '''
     Export a XFlow graph to an ONNX graph
-    
     @params
     graph is a XFlow graph
 
