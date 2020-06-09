@@ -57,7 +57,7 @@ Op Model::get_or_create_transpose(Tensor _input, int permIdx,
   }
   for (int i = 0; i < ndim; i++)
     for (int j = i + 1; j < ndim; j++)
-      if (permArray[i] != permArray[j]) {
+      if (permArray[i] == permArray[j]) {
         return Op::INVALID_OP;
       }
   for (int i = 0; i < ndim; i++)
