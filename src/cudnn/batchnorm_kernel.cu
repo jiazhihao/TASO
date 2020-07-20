@@ -149,8 +149,9 @@ void Model::measure_batchnorm_cost(BatchNorm* bn)
   float milliseconds;
   cudaEventElapsedTime(&milliseconds, startEvent, endEvent);
   bn->runtime = milliseconds / REPEAT_TIMES;
-  printf("measure[BatchNorm]: i(%d %d %d %d) cost(%.4lf)\n",
-         BATCH_SIZE, bn->inputs[0].dim[1], bn->inputs[0].dim[2],
-         bn->inputs[0].dim[3], bn->runtime);
+  if (print_cost)
+    printf("measure[BatchNorm]: i(%d %d %d %d) cost(%.4lf)\n",
+           BATCH_SIZE, bn->inputs[0].dim[1], bn->inputs[0].dim[2],
+           bn->inputs[0].dim[3], bn->runtime);
 }
 
