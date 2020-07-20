@@ -634,6 +634,11 @@ cdef class PyGraph:
                 padW = max(kw - sw, 0)
             else:
                 padW = max(kw - (inputW % sw), 0)
+            # Ensure padding is same on both sides
+            if padH % 2 == 1:
+                padH += 1
+            if padW % 2 == 1:
+                padW += 1
             return [padH // 2, padW // 2, padH - padH // 2, padW - padW // 2]
         elif attrname == 'group':
             return self.p_graph.get_operator_int_attr(op.guid, PM_GROUP)
