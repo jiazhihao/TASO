@@ -190,6 +190,14 @@ bool OpBase::get_int_parameter(PMParameter para, int* value)
   }
 }
 
+bool OpBase::get_float_parameter(PMParameter para, float* value)
+{
+  switch (para) {
+    default:
+      return false;
+  }
+}
+
 bool OpBase::get_input_parameter(TNParameter tnp, DIMParameter dim, int* value)
 {
   int inputIdx = 0, dimIdx = 0;
@@ -681,6 +689,14 @@ int Graph::get_operator_int_attr(size_t guid, PMParameter attr)
   Op op = find_op_or_fail(guid);
   int ret;
   assert(op.ptr->get_int_parameter(attr, &ret));
+  return ret;
+}
+
+float Graph::get_operator_float_attr(size_t guid, PMParameter attr)
+{
+  Op op = find_op_or_fail(guid);
+  float ret;
+  assert(op.ptr->get_float_parameter(attr, &ret));
   return ret;
 }
 
@@ -1307,7 +1323,8 @@ float Graph::run(void)
       case OP_BATCHNORM:
       {
         assert(inList.size() == 5);
-        opPtr = new BatchNorm(model, inputs[0], inputs[1], inputs[2], inputs[3], inputs[4]);
+        BatchNorm* batchnorm = (BatchNorm*) op.ptr;
+        opPtr = new BatchNorm(model, inputs[0], inputs[1], inputs[2], inputs[3], inputs[4], batchnorm->epsilon);
         break;
       }
       case OP_SPLIT:

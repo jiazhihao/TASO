@@ -155,7 +155,11 @@ def _argmin(op, graph, tensors, initializer):
 def _batchnorm(op, graph, tensors, initializer):
     inputs = _get_inputs(op, graph, tensors, initializer)
     attrs = _parse_attribute(op.attribute)
-    outputs = graph.batchnorm(inputs[0], inputs[1], inputs[2], inputs[3], inputs[4])
+    if 'epsilon' in attrs:
+        epsilon = attrs['epsilon']
+    else:
+        epsilon = -1
+    outputs = graph.batchnorm(inputs[0], inputs[1], inputs[2], inputs[3], inputs[4], epsilon)
     return outputs
 
 def _cast(op, graph, tensors, initializer):
@@ -830,7 +834,7 @@ operator_attrs['Add'] = []
 operator_attrs['ArgMax'] = []
 operator_attrs['ArgMin'] = []
 operator_attrs['AveragePool'] = ['kernel_shape', 'pads', 'strides']
-operator_attrs['BatchNormalization'] = [] # TODO: Add epsilon and momentum
+operator_attrs['BatchNormalization'] = ['epsilon'] # TODO: Add momentum
 operator_attrs['Cast'] = []
 operator_attrs['Ceil'] = []
 operator_attrs['Concat'] = ['axis']

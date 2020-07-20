@@ -115,6 +115,7 @@ cdef extern from "taso/ops.h" namespace "taso":
         PM_OUTSHUFFLE
         PM_MERGE_GCONV_COUNT
         PM_AXES
+        PM_EPSILON
 
     # This must be consistent with include/taso/ops.h
     cdef enum ActiMode:
@@ -175,7 +176,8 @@ cdef extern from "taso/ops.h" namespace "taso":
                                const TensorHandle scale,
                                const TensorHandle bias,
                                const TensorHandle mean,
-                               const TensorHandle var)
+                               const TensorHandle var,
+                               const float epsilon)
         TensorHandle cast(const TensorHandle input, DataType datatype)
         TensorHandle ceil(const TensorHandle input)
         TensorHandle concat(int axis, int n,
@@ -262,6 +264,7 @@ cdef extern from "taso/ops.h" namespace "taso":
         int get_input_edges(Edge* edges, size_t guid)
         OpType get_operator_type(size_t guid)
         int get_operator_int_attr(size_t guid, PMParameter attr)
+        float get_operator_float_attr(size_t guid, PMParameter attr)
         int get_num_outputs(size_t guid)
         int get_input_dims(size_t guid, int* dims, int idx)
         void get_weight_value(size_t guid, float* data)
