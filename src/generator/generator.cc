@@ -1729,7 +1729,7 @@ int main(int argc, char **argv)
   inputs.push_back(s0);
   std::vector<OpTemp*> ops;
   ops.push_back(new MatmulTemp(AC_MODE_NONE));
-  operator_names[ops.back()] = "Matmul";
+  operator_names[ops.back()] = "MatMul";
   ops.push_back(new ElementTemp(OP_EW_ADD));
   operator_names[ops.back()] = "EWAdd";
   ops.push_back(new ElementTemp(OP_EW_MUL));

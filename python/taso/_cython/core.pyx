@@ -91,6 +91,13 @@ cdef class PyTensor:
         def __set__(self, value):
             self._set_tensor(value)
 
+    property nDim:
+        def __get__(self):
+            if self.ctensor == NULL:
+                return None
+            else:
+                return self.ctensor.numDim
+
     def __cinit__(self, tensor):
         self._set_tensor(tensor)
 
@@ -119,7 +126,7 @@ op_table[OP_RESHAPE] = "Reshape"
 op_table[OP_TRANSPOSE] = "Transpose"
 op_table[OP_EW_ADD] = "Add"
 op_table[OP_EW_MUL] = "Mul"
-op_table[OP_MATMUL] = "Matmul"
+op_table[OP_MATMUL] = "MatMul"
 op_table[OP_SQUEEZE] = "Squeeze"
 op_table[OP_UNSQUEEZE] = "Unsqueeze"
 op_table[OP_EW_SUB] = "Sub"

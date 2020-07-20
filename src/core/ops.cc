@@ -270,7 +270,7 @@ std::string Op::op_to_string(const OpBase* ptr)
     case OP_EW_MUL:
       return "Mul";
     case OP_MATMUL:
-      return "Matmul";
+      return "MatMul";
     case OP_MUL:
       return "Mul";
     case OP_ENLARGE:
@@ -515,8 +515,16 @@ Graph* Graph::preprocess_weights(void)
   while (true) {
     bool change = false;
     for (opIt = newGraph->inEdges.begin(); opIt != newGraph->inEdges.end(); opIt++) {
-      if (opIt->first.ptr->type == OP_INPUT || opIt->first.ptr->type == OP_WEIGHT)
+      if (opIt->first.ptr->type == OP_INPUT || opIt->first.ptr->type == OP_WEIGHT) {
         continue;
+      } else if (opIt->first.ptr->type == OP_TRANSPOSE) {
+        // NOTE: We skip OP_TRANSPOSE here because the kernel implementation
+        // of OP_TRANSPOSE is currently a no-op, and therefore the correct
+        // output will not be returned. To fix this, we should
+        // implement the cuBLAS transpose operator and/or add an OP_GEMM
+        // to automatically transpose inputs.
+        continue;
+      }
       bool allWeights = true;
       const std::set<Edge, EdgeCompare>& list = opIt->second;
       std::set<Edge, EdgeCompare>::const_iterator it;

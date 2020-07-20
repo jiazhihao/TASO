@@ -242,12 +242,24 @@ def _exp(op, graph, tensors, initializer):
     outputs = graph.exp(input=inputs[0])
     return outputs
 
+def _flatten(op, graph, tensors, initializer):
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "Flatten requires exactly one input"
+    shape = []
+    shape.append(inputs[0].dim(0))
+    dim = 1
+    for i in range(1, inputs[0].nDim):
+        dim *= inputs[0].dim(i)
+    shape.append(dim)
+    outputs = graph.reshape(inputs[0], tuple(shape))
+    return outputs
+
 def _gemm(op, graph, tensors, initializer):
     inputs = _get_inputs(op, graph, tensors, initializer)
     attrs = _parse_attribute(op.attribute)
-    if "transA" in attrs:
+    if "transA" in attrs and attrs["transA"] == 1:
         inputs[0] = graph.transpose(inputs[0], (1,0), shuffle=True)
-    if "transB" in attrs:
+    if "transB" in attrs and attrs["transB"] == 1:
         inputs[1] = graph.transpose(inputs[1], (1,0), shuffle=True)
     outputs = graph.matmul(inputs[0], inputs[1])
     return outputs
@@ -304,7 +316,7 @@ def _logical_not(op, graph, tensors, initializer):
 
 def _matmul(op, graph, tensors, initializer):
     inputs = _get_inputs(op, graph, tensors, initializer)
-    assert len(inputs) == 2, "Matmul takes exactly two inputs"
+    assert len(inputs) == 2, "MatMul takes exactly two inputs"
     outputs = graph.matmul(inputs[0], inputs[1])
     return outputs
 
@@ -359,6 +371,16 @@ def _avgpool2d(op, graph, tensors, initializer):
     kernels = attrs["kernel_shape"]
     strides = attrs["strides"]
     pads = _get_conv_pool_pads_attr(attrs)
+    outputs = graph.avgpool2d(input=inputs[0], kernels=kernels, strides=strides, padding=pads)
+    return outputs
+
+def _globalavgpool2d(op, graph, tensors, initializer):
+    inputs = _get_inputs(op, graph, tensors, initializer)
+    assert len(inputs) == 1, "GlobalAvgPool2D requires exactly one input"
+    dim = inputs[0].dim(inputs[0].nDim-1)
+    kernels = [dim, dim]
+    strides = [1, 1]
+    pads = "VALID"
     outputs = graph.avgpool2d(input=inputs[0], kernels=kernels, strides=strides, padding=pads)
     return outputs
 
@@ -648,6 +670,7 @@ xf_operators['Div'] = _div
 xf_operators['Dropout'] = _dropout
 xf_operators['Equal'] = _equal
 xf_operators['Exp'] = _exp
+xf_operators['Flatten'] = _flatten
 xf_operators['Gemm'] = _gemm
 xf_operators['Greater'] = _greater
 xf_operators['Identity'] = _identity
@@ -664,13 +687,14 @@ xf_operators['ReduceSum'] = _reducesum
 xf_operators['Reshape'] = _reshape
 xf_operators['Relu'] = _relu
 xf_operators['Round'] = _round
-xf_operators['Matmul'] = _matmul
+xf_operators['MatMul'] = _matmul
 xf_operators['Max'] = _max
 xf_operators['MaxPool'] = _maxpool2d
 xf_operators['Min'] = _min
 xf_operators['Mul'] = _mul
 xf_operators['Not'] = _logical_not
 xf_operators['AveragePool'] = _avgpool2d
+xf_operators['GlobalAveragePool'] = _globalavgpool2d
 xf_operators['Shape'] = _shape
 xf_operators['Size'] = _size
 xf_operators['Slice'] = _slice
@@ -760,7 +784,7 @@ def load_onnx(filename):
         idx += 1
     assert len(node_list) == len(model.graph.node), "Internal error when reording ONNX operators"
 
-    # Add nodse into TASO graph
+    # Add nodes into TASO graph
     cnt = 0
     for opname in node_list:
         op = name_to_op[opname]
@@ -789,10 +813,11 @@ input_weight_names['AveragePool'] = ['input']
 input_weight_names['BatchNormalization'] = ['input', 'scale', 'bias', 'mean', 'var']
 input_weight_names['Concat'] = ['input1', 'input2', 'input3', 'input4', 'input5', 'input6']
 input_weight_names['Conv'] = ['input', 'weight', 'bias']
-input_weight_names['Matmul'] = ['input', 'weight']
+input_weight_names['MatMul'] = ['input', 'weight']
 input_weight_names['Mul'] = ['input1', 'input2']
-input_weight_names['Reshpe'] = ['input', 'shape']
+input_weight_names['Reshape'] = ['input', 'shape']
 input_weight_names['BroadcastAdd'] = ['input1', 'input2']
+input_weight_names['Transpose'] = ['input']
 
 operator_attrs = dict()
 operator_attrs['Add'] = []
@@ -812,7 +837,7 @@ operator_attrs['Identity'] = []
 operator_attrs['Less'] = []
 operator_attrs['Log'] = []
 operator_attrs['Pad'] = []
-operator_attrs['Matmul'] = []
+operator_attrs['MatMul'] = []
 operator_attrs['MaxPool'] = ['kernel_shape', 'pads', 'strides']
 operator_attrs['Mul'] = []
 operator_attrs['Shape'] = []
