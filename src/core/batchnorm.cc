@@ -68,7 +68,7 @@ BatchNorm::BatchNorm(Model* _model,
 : OpBase(_input, _scale, _bias, _mean, _var, _model, OP_BATCHNORM)
 {
   epsilon = _epsilon < 0 ? get_min_epsilon() : _epsilon;
-  assert(_epsilon >= get_min_epsilon());
+  assert(epsilon >= get_min_epsilon());
   assert(_input.numDim == 4);
   numOutputs = 1;
   outputs[0] = _input;
