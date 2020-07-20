@@ -213,6 +213,10 @@ def _conv2d(op, graph, tensors, initializer):
     pads = _get_conv_pool_pads_attr(attrs)
     strides = attrs["strides"]
     outputs = graph.conv2d(input=inputs[0], weight=inputs[1], strides=strides, padding=pads)
+    if len(inputs) > 2:
+        dim = inputs[2].dim(0)
+        reshaped_bias = graph.reshape(inputs[2], (1, dim, 1, 1))
+        outputs = graph.add(outputs, reshaped_bias)
     return outputs
 
 def _div(op, graph, tensors, initializer):
@@ -262,6 +266,8 @@ def _gemm(op, graph, tensors, initializer):
     if "transB" in attrs and attrs["transB"] == 1:
         inputs[1] = graph.transpose(inputs[1], (1,0), shuffle=True)
     outputs = graph.matmul(inputs[0], inputs[1])
+    if len(inputs) > 2:
+        outputs = graph.add(outputs, inputs[2])
     return outputs
 
 def _greater(op, graph, tensors, initializer):
