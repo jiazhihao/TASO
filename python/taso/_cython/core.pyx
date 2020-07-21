@@ -91,6 +91,13 @@ cdef class PyTensor:
         def __set__(self, value):
             self._set_tensor(value)
 
+    property nDim:
+        def __get__(self):
+            if self.ctensor == NULL:
+                return None
+            else:
+                return self.ctensor.numDim
+
     def __cinit__(self, tensor):
         self._set_tensor(tensor)
 
@@ -119,7 +126,7 @@ op_table[OP_RESHAPE] = "Reshape"
 op_table[OP_TRANSPOSE] = "Transpose"
 op_table[OP_EW_ADD] = "Add"
 op_table[OP_EW_MUL] = "Mul"
-op_table[OP_MATMUL] = "Matmul"
+op_table[OP_MATMUL] = "MatMul"
 op_table[OP_SQUEEZE] = "Squeeze"
 op_table[OP_UNSQUEEZE] = "Unsqueeze"
 op_table[OP_EW_SUB] = "Sub"
@@ -183,8 +190,9 @@ cdef class PyGraph:
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
-    def batchnorm(self, PyTensor input, PyTensor scale, PyTensor bias, PyTensor mean, PyTensor var):
-        cdef TensorHandle handle = self.p_graph.batchnorm(input.ctensor, scale.ctensor, bias.ctensor, mean.ctensor, var.ctensor)
+    def batchnorm(self, PyTensor input, PyTensor scale, PyTensor bias, PyTensor mean, PyTensor var, float epsilon = -1):
+        cdef TensorHandle handle = self.p_graph.batchnorm(input.ctensor, scale.ctensor,
+                                                          bias.ctensor, mean.ctensor, var.ctensor, epsilon)
         t = ctypes.cast(<unsigned long long>handle, ctypes.c_void_p)
         return PyTensor(t)
 
@@ -627,6 +635,11 @@ cdef class PyGraph:
                 padW = max(kw - sw, 0)
             else:
                 padW = max(kw - (inputW % sw), 0)
+            # Ensure padding is same on both sides
+            if padH % 2 == 1:
+                padH += 1
+            if padW % 2 == 1:
+                padW += 1
             return [padH // 2, padW // 2, padH - padH // 2, padW - padW // 2]
         elif attrname == 'group':
             return self.p_graph.get_operator_int_attr(op.guid, PM_GROUP)
@@ -642,6 +655,8 @@ cdef class PyGraph:
                 perIdx = perIdx // len(dims)
             perm = tuple(dims)
             return perm
+        elif attrname == 'epsilon':
+            return self.p_graph.get_operator_float_attr(op.guid, PM_EPSILON)
         elif attrname == 'axes':
             # FIXME
             return [0]

@@ -20,10 +20,11 @@ TensorHandle Graph::batchnorm(const TensorHandle _input,
                               const TensorHandle _scale,
                               const TensorHandle _bias,
                               const TensorHandle _mean,
-                              const TensorHandle _var)
+                              const TensorHandle _var,
+                              const float _epsilon)
 {
   Op op = model->get_or_create_batchnorm(*_input, *_scale, *_bias,
-                                         *_mean, *_var);
+                                         *_mean, *_var, _epsilon);
   add_edge(_input->op, op, _input->idx, 0);
   add_edge(_scale->op, op, _scale->idx, 1);
   add_edge(_bias->op, op, _bias->idx, 2);
@@ -38,7 +39,8 @@ Op Model::get_or_create_batchnorm(const Tensor& _input,
                                   const Tensor& _scale,
                                   const Tensor& _bias,
                                   const Tensor& _mean,
-                                  const Tensor& _var)
+                                  const Tensor& _var,
+                                  const float _epsilon)
 {
   // key is (inputN, inputC, inputH, inputW)
   BatchNormKey key(_input);
@@ -46,7 +48,7 @@ Op Model::get_or_create_batchnorm(const Tensor& _input,
   if(batchnorm.find(key) != batchnorm.end()) {
     bnOp = batchnorm[key];
   } else {
-    bnOp = new BatchNorm(this, _input, _scale, _bias, _mean, _var);
+    bnOp = new BatchNorm(this, _input, _scale, _bias, _mean, _var, _epsilon);
     measure_batchnorm_cost(bnOp);
     batchnorm[key] = bnOp;
   }
@@ -61,9 +63,12 @@ BatchNorm::BatchNorm(Model* _model,
                      const Tensor& _scale,
                      const Tensor& _bias,
                      const Tensor& _mean,
-                     const Tensor& _var)
+                     const Tensor& _var,
+                     const float _epsilon)
 : OpBase(_input, _scale, _bias, _mean, _var, _model, OP_BATCHNORM)
 {
+  epsilon = _epsilon < 0 ? get_min_epsilon() : _epsilon;
+  assert(epsilon >= get_min_epsilon());
   assert(_input.numDim == 4);
   numOutputs = 1;
   outputs[0] = _input;
@@ -76,6 +81,19 @@ BatchNorm::~BatchNorm(void)
 bool BatchNorm::get_int_parameter(PMParameter para, int* value)
 {
   return OpBase::get_int_parameter(para, value);
+}
+
+bool BatchNorm::get_float_parameter(PMParameter para, float* value)
+{
+  switch (para) {
+    case PM_EPSILON:
+    {
+      *value = epsilon;
+      return true;
+    }
+    default:
+      return OpBase::get_float_parameter(para, value);
+  }
 }
 
 void BatchNorm::collect_costs(float& exe_time, float& flops,

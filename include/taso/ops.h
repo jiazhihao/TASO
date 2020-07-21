@@ -402,6 +402,7 @@ enum PMParameter {
   PM_MERGE_GCONV_COUNT, // MergeGConv
   PM_AXES,		// Squeeze, Unsqueeze, Reduce*
   PM_KEEP_DIMS,         // Reduce*
+  PM_EPSILON,   // BatchNorm
 };
 
 enum TNParameter {
@@ -467,7 +468,7 @@ public:
   OpBase(int n, Tensor* inputs, Model* _model, OpType _type);
   virtual bool get_input_parameter(TNParameter, DIMParameter, int*);
   virtual bool get_int_parameter(PMParameter, int*);
-  //virtual bool get_float_parameter(PMParameter, float*);
+  virtual bool get_float_parameter(PMParameter, float*);
   //virtual bool get_ints_parameter(PMParameter, std::vector<int>*);
   virtual void forward(bool block = false) = 0;
   virtual void map(void) = 0;
@@ -509,7 +510,8 @@ public:
                          const TensorHandle _scale,
                          const TensorHandle _bias,
                          const TensorHandle _mean,
-                         const TensorHandle _var);
+                         const TensorHandle _var,
+                         float _epsilon);
   TensorHandle cast(const TensorHandle _input, DataType _datatype);
   TensorHandle ceil(const TensorHandle _input);
   TensorHandle concat(int axis, int n, const TensorHandle* _inputs);
@@ -645,6 +647,7 @@ public:
   int get_input_edges(Edge* opList, size_t guid);
   OpType get_operator_type(size_t guid);
   int get_operator_int_attr(size_t guid, PMParameter attr);
+  float get_operator_float_attr(size_t guid, PMParameter attr);
   int get_num_outputs(size_t guid);
   int get_input_dims(size_t guid, int* dims, int idx);
   void get_weight_value(size_t guid, DATATYPE* value);
@@ -812,14 +815,18 @@ public:
 class BatchNorm : public OpBase {
 public:
   BatchNorm(Model* _model, const Tensor& _input, const Tensor& _scale,
-            const Tensor& _bias, const Tensor& _mean, const Tensor& _var);
+            const Tensor& _bias, const Tensor& _mean, const Tensor& _var,
+            const float _epsilon);
   ~BatchNorm(void);
   bool get_int_parameter(PMParameter para, int*);
+  bool get_float_parameter(PMParameter para, float*);
+  float get_min_epsilon(void);
   void forward(bool block);
   void map(void);
   void unmap(void);
   void collect_costs(float& exe_time, float& flops, float& mem_acc, int& num_kernels);
 public:
+  float epsilon;
 #ifdef USE_CUDNN
   cudnnTensorDescriptor_t inputTensor, biasTensor, outputTensor;
 #endif
@@ -1348,7 +1355,8 @@ public:
                              const Tensor& _scale,
                              const Tensor& _bias,
                              const Tensor& _mean,
-                             const Tensor& _var);
+                             const Tensor& _var,
+                             const float _epsilon);
   Op get_or_create_cast(const Tensor& _input, DataType _datatype);
   Op get_or_create_concat(int axis, int n, Tensor* _inputs, bool* _needCopy);
   Op get_or_create_constant(int ndim, int* dims, OpType type);

@@ -22,7 +22,7 @@ static void create_net(BatchNorm* bn, DNNLNet& net, engine& eng, stream& strm,
     memory& inputMem, memory& outputMem, memory& meanMem, memory& varMem, memory& scaleShiftMem,
     void* inputPtr, void* outputPtr, void* meanPtr, void* varPtr, void* biasPtr,
     bool isTraining) {
-  const float eps = BN_MIN_EPSILON;
+  const float eps = epsilon;
   // dimensions.
   int inputC = bn->inputs[0].dim[1];
   // data sizes.
@@ -64,6 +64,11 @@ static void create_net(BatchNorm* bn, DNNLNet& net, engine& eng, stream& strm,
       {DNNL_ARG_VARIANCE, varMem},
       {DNNL_ARG_SCALE_SHIFT, scaleShiftMem},
       {DNNL_ARG_DST, outputMem}}});
+}
+
+float BatchNorm::get_min_epsilon(void)
+{
+  return BN_MIN_EPSILON;
 }
 
 void BatchNorm::map(void)

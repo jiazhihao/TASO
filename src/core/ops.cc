@@ -190,6 +190,14 @@ bool OpBase::get_int_parameter(PMParameter para, int* value)
   }
 }
 
+bool OpBase::get_float_parameter(PMParameter para, float* value)
+{
+  switch (para) {
+    default:
+      return false;
+  }
+}
+
 bool OpBase::get_input_parameter(TNParameter tnp, DIMParameter dim, int* value)
 {
   int inputIdx = 0, dimIdx = 0;
@@ -270,7 +278,7 @@ std::string Op::op_to_string(const OpBase* ptr)
     case OP_EW_MUL:
       return "Mul";
     case OP_MATMUL:
-      return "Matmul";
+      return "MatMul";
     case OP_MUL:
       return "Mul";
     case OP_ENLARGE:
@@ -515,8 +523,16 @@ Graph* Graph::preprocess_weights(void)
   while (true) {
     bool change = false;
     for (opIt = newGraph->inEdges.begin(); opIt != newGraph->inEdges.end(); opIt++) {
-      if (opIt->first.ptr->type == OP_INPUT || opIt->first.ptr->type == OP_WEIGHT)
+      if (opIt->first.ptr->type == OP_INPUT || opIt->first.ptr->type == OP_WEIGHT) {
         continue;
+      } else if (opIt->first.ptr->type == OP_TRANSPOSE) {
+        // NOTE: We skip OP_TRANSPOSE here because the kernel implementation
+        // of OP_TRANSPOSE is currently a no-op, and therefore the correct
+        // output will not be returned. To fix this, we should
+        // implement the cuBLAS transpose operator and/or add an OP_GEMM
+        // to automatically transpose inputs.
+        continue;
+      }
       bool allWeights = true;
       const std::set<Edge, EdgeCompare>& list = opIt->second;
       std::set<Edge, EdgeCompare>::const_iterator it;
@@ -673,6 +689,14 @@ int Graph::get_operator_int_attr(size_t guid, PMParameter attr)
   Op op = find_op_or_fail(guid);
   int ret;
   assert(op.ptr->get_int_parameter(attr, &ret));
+  return ret;
+}
+
+float Graph::get_operator_float_attr(size_t guid, PMParameter attr)
+{
+  Op op = find_op_or_fail(guid);
+  float ret;
+  assert(op.ptr->get_float_parameter(attr, &ret));
   return ret;
 }
 
@@ -1299,7 +1323,8 @@ float Graph::run(void)
       case OP_BATCHNORM:
       {
         assert(inList.size() == 5);
-        opPtr = new BatchNorm(model, inputs[0], inputs[1], inputs[2], inputs[3], inputs[4]);
+        BatchNorm* batchnorm = (BatchNorm*) op.ptr;
+        opPtr = new BatchNorm(model, inputs[0], inputs[1], inputs[2], inputs[3], inputs[4], batchnorm->epsilon);
         break;
       }
       case OP_SPLIT:
