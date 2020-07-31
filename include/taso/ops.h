@@ -256,7 +256,7 @@ struct SplitInfo {
     while (idx < num && pos[idx] < mid)
       left.pos[left.num++] = pos[idx++];
     while (idx < num - 1)
-      right.pos[right.num++] = pos[idx++];
+      right.pos[right.num++] = pos[idx++] - mid;
   }
   void combine(const SplitInfo& next) {
     if (num != next.num)
