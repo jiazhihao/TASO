@@ -144,7 +144,7 @@ void Model::measure_matmul_cost(Matmul* mm)
     transB = CUBLAS_OP_N;
     ldb = mm->inputs[1].stride[numDim-1];
   } else {
-    assert(mm->inputs[1].stride[numDim-1] == 1 && mm->inputs[0].stride[numDim] >= n);
+    assert(mm->inputs[1].stride[numDim-1] == 1 && mm->inputs[1].stride[numDim] >= n);
     transB = CUBLAS_OP_T;
     ldb = mm->inputs[1].stride[numDim-2];
   }
