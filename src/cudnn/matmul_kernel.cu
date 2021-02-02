@@ -77,7 +77,7 @@ void Matmul::forward(bool block)
     transB = CUBLAS_OP_N;
     ldb = inputs[1].stride[numDim-1];
   } else {
-    assert(mm->inputs[1].stride[numDim-1] == 1 && mm->inputs[0].stride[numDim] >= n);
+    assert(mm->inputs[1].stride[numDim-1] == 1 && mm->inputs[1].stride[numDim-2] >= n);
     transB = CUBLAS_OP_T;
     ldb = inputs[1].stride[numDim-2];
   }
