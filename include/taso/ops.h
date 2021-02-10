@@ -154,7 +154,7 @@ struct Op {
   inline bool operator<(const Op& b) const {
     if (guid != b.guid) return guid < b.guid;
     if (ptr != b.ptr) return ptr < b.ptr;
-    return true;
+    return false;
   }
   Op& operator=(const Op& op)
   {
@@ -433,7 +433,7 @@ enum ActiMode {
   AC_MODE_NONE,
   AC_MODE_SIGMOID,
   AC_MODE_RELU,
-  AC_MODE_TANH, 
+  AC_MODE_TANH,
 };
 
 //That this must be consistent with python/taso/_cython/CCore.pxd
@@ -1272,7 +1272,7 @@ struct PadKey {
   int keys[KEY_LENGTH];
 };
 
-// keys are (inputN, inputC, inputH, inputW, kernelH, kernelW,              
+// keys are (inputN, inputC, inputH, inputW, kernelH, kernelW,
 //           strideH, strideW, padding, activation, type,
 //           input.split[0], input.split[1]
 struct Pool2DKey {
