@@ -54,7 +54,6 @@ namespace taso {
 #define MAX_NUM_SPLITS 32
 #define MAX_NUM_INPUTS 6
 #define MAX_NUM_OUTPUTS 6
-#define BATCH_SIZE 1
 #define MAX_TENSOR_SIZE 512 * 1024 * 1024 // 512MB
 #define REPEAT_TIMES 32
 #define WARMUP_TIMES 8

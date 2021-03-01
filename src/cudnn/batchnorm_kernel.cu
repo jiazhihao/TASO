@@ -110,14 +110,15 @@ void Model::measure_batchnorm_cost(BatchNorm* bn)
 {
   const float alpha = 1.0f;
   const float beta = 0.0f;
+  int inputN = bn->inputs[0].dim[0];
   int inputC = bn->inputs[0].dim[1];
   int inputH = bn->inputs[0].dim[2];
   int inputW = bn->inputs[0].dim[3];
   cudnnBatchNormMode_t mode = CUDNN_BATCHNORM_SPATIAL;
   checkCUDNN(cudnnSetTensor4dDescriptor(inputTensor, CUDNN_TENSOR_NCHW,
-      CUDNN_DATA_FLOAT, BATCH_SIZE, inputC, inputH, inputW));
+      CUDNN_DATA_FLOAT, inputN, inputC, inputH, inputW));
   checkCUDNN(cudnnSetTensor4dDescriptor(outputTensor, CUDNN_TENSOR_NCHW,
-      CUDNN_DATA_FLOAT, BATCH_SIZE, inputC, inputH, inputW));
+      CUDNN_DATA_FLOAT, inputN, inputC, inputH, inputW));
   checkCUDNN(cudnnSetTensor4dDescriptor(biasTensor, CUDNN_TENSOR_NCHW,
       CUDNN_DATA_FLOAT, 1, inputC, 1, 1));
 #ifdef DO_TRAINING
@@ -157,7 +158,6 @@ void Model::measure_batchnorm_cost(BatchNorm* bn)
   bn->runtime = milliseconds / REPEAT_TIMES;
   if (print_cost)
     printf("measure[BatchNorm]: i(%d %d %d %d) cost(%.4lf)\n",
-           BATCH_SIZE, bn->inputs[0].dim[1], bn->inputs[0].dim[2],
-           bn->inputs[0].dim[3], bn->runtime);
+           inputN, inputC, inputH, inputW, bn->runtime);
 }
 

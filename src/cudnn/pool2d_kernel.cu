@@ -23,6 +23,7 @@ void Pool2D::map(void)
   checkCUDNN(cudnnCreateTensorDescriptor(&inputTensor));
   checkCUDNN(cudnnCreateTensorDescriptor(&outputTensor));
   checkCUDNN(cudnnCreatePoolingDescriptor(&poolDesc));
+  int inputN = inputs[0].dim[0];
   int inputC = inputs[0].dim[1];
   int inputH = inputs[0].dim[2];
   int inputW = inputs[0].dim[3];
@@ -30,7 +31,7 @@ void Pool2D::map(void)
   get_padding(&padH, &padW);
   // set descriptors
   checkCUDNN(cudnnSetTensor4dDescriptor(inputTensor, CUDNN_TENSOR_NCHW,
-      CUDNN_DATA_FLOAT, BATCH_SIZE, inputC, inputH, inputW));
+      CUDNN_DATA_FLOAT, inputN, inputC, inputH, inputW));
   cudnnPoolingMode_t mode;
   if (type == OP_POOL2D_MAX)
     mode = CUDNN_POOLING_MAX;
@@ -41,7 +42,7 @@ void Pool2D::map(void)
   int n, c, h, w;
   checkCUDNN(cudnnGetPooling2dForwardOutputDim(poolDesc, 
       inputTensor, &n, &c, &h, &w));
-  assert(n == BATCH_SIZE);
+  assert(n == inputN);
   assert(c == inputC);
   assert(outputs[0].dim[2] == h);
   assert(outputs[0].dim[3] == w);
@@ -90,6 +91,7 @@ void Model::measure_pool2d_cost(Pool2D* pool)
 {
   const float alpha = 1.0f;
   const float beta = 0.0f;
+  int inputN = pool->inputs[0].dim[0];
   int inputC = pool->inputs[0].dim[1];
   int inputH = pool->inputs[0].dim[2];
   int inputW = pool->inputs[0].dim[3];
@@ -120,7 +122,7 @@ void Model::measure_pool2d_cost(Pool2D* pool)
       assert(false);
   }
   checkCUDNN(cudnnSetTensor4dDescriptor(inputTensor, CUDNN_TENSOR_NCHW,
-      CUDNN_DATA_FLOAT, BATCH_SIZE, inputC, inputH, inputW));
+      CUDNN_DATA_FLOAT, inputN, inputC, inputH, inputW));
   cudnnPoolingMode_t mode;
   if (pool->type == OP_POOL2D_MAX)
     mode = CUDNN_POOLING_MAX;
@@ -134,14 +136,14 @@ void Model::measure_pool2d_cost(Pool2D* pool)
   int n, c, h, w;
   checkCUDNN(cudnnGetPooling2dForwardOutputDim(poolDesc,
       inputTensor, &n, &c, &h, &w));
-  assert(n == BATCH_SIZE);
+  assert(n == inputN);
   assert(c == inputC);
   assert(outputH == h);
   assert(outputW == w);
   checkCUDNN(cudnnSetTensor4dDescriptor(outputTensor, CUDNN_TENSOR_NCHW,
       CUDNN_DATA_FLOAT, n, c, h, w));
-  size_t inputSize = sizeof(DATATYPE) * BATCH_SIZE * inputC * inputH * inputW;
-  size_t outputSize = sizeof(DATATYPE) * BATCH_SIZE * inputC * outputH * outputW;
+  size_t inputSize = sizeof(DATATYPE) * inputN * inputC * inputH * inputW;
+  size_t outputSize = sizeof(DATATYPE) * inputN * inputC * outputH * outputW;
   assert(inputSize < MAX_TENSOR_SIZE);
   assert(outputSize < MAX_TENSOR_SIZE);
   checkCUDA(cudaDeviceSynchronize());
@@ -165,7 +167,7 @@ void Model::measure_pool2d_cost(Pool2D* pool)
   pool->runtime = milliseconds / REPEAT_TIMES;
   if (print_cost)
     printf("  measure[Pool2D]: i(%d %d %d %d) k(%d %d) s(%d %d) p(%d %d) cost(%.4lf)\n",
-           BATCH_SIZE, inputC, inputH, inputW, pool->kernelH, pool->kernelW,
+           inputN, inputC, inputH, inputW, pool->kernelH, pool->kernelW,
            pool->strideH, pool->strideW, padH, padW, pool->runtime);
 }
 
