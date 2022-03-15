@@ -828,6 +828,7 @@ input_weight_names['Mul'] = ['input1', 'input2']
 input_weight_names['Reshape'] = ['input', 'shape']
 input_weight_names['BroadcastAdd'] = ['input1', 'input2']
 input_weight_names['Transpose'] = ['input']
+input_weight_names['PRelu'] = ['input1', 'input2']
 
 operator_attrs = dict()
 operator_attrs['Add'] = []
@@ -862,6 +863,7 @@ operator_attrs['Tanh'] = []
 operator_attrs['Transpose'] = ['perm']
 operator_attrs['Unsqueeze'] = ['axes']
 operator_attrs['BroadcastAdd'] = []
+operator_attrs['PRelu'] = []
 
 def _input_tensor_name(graph, inedge, op):
     intype = graph.get_operator_type(inedge['srcOp'])
