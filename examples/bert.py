@@ -32,7 +32,7 @@ def attention(graph, input, heads):
 
     # a final linear layer
     linear = graph.new_weight(dims=(d_model, d_model))
-    output = graph.matmul(input, linear)
+    output = graph.matmul(output, linear)
     return output
 
 graph = ts.new_graph()
