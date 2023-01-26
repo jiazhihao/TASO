@@ -866,7 +866,7 @@ operator_attrs['BroadcastAdd'] = []
 def _input_tensor_name(graph, inedge, op):
     intype = graph.get_operator_type(inedge['srcOp'])
     if intype == "Input":
-        return "data"
+        return f"Data{inedge['srcOp']['guid']}"
     elif intype == "Weight":
         mytype = graph.get_operator_type(op)
         return "{}{}_{}".format(mytype, op['guid'], input_weight_names[mytype][inedge['dstIdx']])
@@ -898,6 +898,7 @@ def export_onnx(graph):
     graph_initializers = list()
     graph_outputs = list()
     output_guids = dict()
+    created_graph_inputs = set()
     for op in opList:
         mytype = graph.get_operator_type(op)
         inedges = graph.get_input_edges(op)
@@ -905,15 +906,18 @@ def export_onnx(graph):
         inputs = list()
         for e in inedges:
             intype = graph.get_operator_type(e['srcOp'])
-            inputs.append(_input_tensor_name(graph, e, op))
+            input_name = _input_tensor_name(graph, e, op)
+            inputs.append(input_name)
             output_guids.pop((e['srcOp']['guid'], e['srcIdx']), None)
             if intype == 'Input' or intype == 'Weight':
-                graph_inputs.append(helper.make_tensor_value_info(_input_tensor_name(graph, e, op),
-                                    TensorProto.FLOAT, graph.get_input_dims(op, e['dstIdx'])))
-            if intype == 'Weight':
-                graph_initializers.append(helper.make_tensor(_input_tensor_name(graph, e, op),
-                                          TensorProto.FLOAT, graph.get_input_dims(op, e['dstIdx']),
-                                          graph.get_weight_value(e['srcOp'])))
+                if input_name not in created_graph_inputs:
+                    created_graph_inputs.add(input_name)
+                    graph_inputs.append(helper.make_tensor_value_info(input_name,
+                                        TensorProto.FLOAT, graph.get_input_dims(op, e['dstIdx'])))
+                    if intype == 'Weight':
+                        graph_initializers.append(helper.make_tensor(input_name,
+                                                TensorProto.FLOAT, graph.get_input_dims(op, e['dstIdx']),
+                                                graph.get_weight_value(e['srcOp'])))
 
         # add a second input for Reshape
         if mytype == 'Reshape':
